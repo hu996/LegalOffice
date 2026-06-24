@@ -1,0 +1,73 @@
+@model LegalOffice.Application.ViewModels.LawyerCreateEditVM
+@{
+    ViewData["Title"] = "إضافة محامي";
+}
+
+<div class="glass-card p-4">
+    <h2 class="mb-1">إضافة محامي جديد</h2>
+    <div class="text-muted mb-4">حدد بيانات المحامي ثم اختر التخصصات اللي يقدر يتابعها.</div>
+
+    <form method="post" class="row g-3">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="col-md-6">
+            <label class="form-label">الاسم الكامل</label>
+            <input asp-for="FullName" class="form-control" />
+            <span asp-validation-for="FullName" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">الهاتف</label>
+            <input asp-for="Phone" class="form-control" />
+            <span asp-validation-for="Phone" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">البريد</label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">الوظيفة</label>
+            <input asp-for="JobTitle" class="form-control" />
+            <span asp-validation-for="JobTitle" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">تفعيل المحامي</label>
+            <select asp-for="IsActive" class="form-select">
+                <option value="true">نشط</option>
+                <option value="false">متوقف</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">بريد الحساب</label>
+            <input asp-for="PortalEmail" class="form-control" placeholder="اختياري" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">كلمة مرور مؤقتة</label>
+            <input asp-for="TemporaryPassword" type="text" class="form-control" placeholder="اختياري" />
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">تخصصات المحامي</label>
+            <div class="row g-2">
+                @foreach (var item in Model.CaseTypes)
+                {
+                    <div class="col-md-4 col-lg-3">
+                        <label class="law-card p-3 d-flex align-items-center gap-2">
+                            <input class="form-check-input m-0" type="checkbox" name="SelectedCaseTypeIds" value="@item.Value" @(Model.SelectedCaseTypeIds.Contains(int.Parse(item.Value)) ? "checked" : "") />
+                            <span>@item.Text</span>
+                        </label>
+                    </div>
+                }
+            </div>
+            <span asp-validation-for="SelectedCaseTypeIds" class="text-danger"></span>
+        </div>
+
+        <div class="col-12 d-flex gap-2">
+            <button class="btn btn-gold">حفظ</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">رجوع</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

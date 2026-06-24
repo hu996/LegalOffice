@@ -1,0 +1,41 @@
+@model LegalOffice.Domain.Entities.Lookup
+@{
+    ViewData["Title"] = "تعديل قيمة";
+    var lookupTypeName = ViewBag.LookupTypeName as string ?? Model.Type;
+}
+
+<div class="glass-card p-4">
+    <h2 class="mb-1">تعديل قيمة</h2>
+    <div class="text-muted mb-4">النوع الحالي: <strong>@lookupTypeName</strong></div>
+
+    <form method="post" class="row g-3">
+        <input asp-for="Id" type="hidden" />
+        <input asp-for="LookupTypeId" type="hidden" />
+        <input asp-for="Type" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="col-md-6">
+            <label class="form-label">الاسم بالعربي</label>
+            <input asp-for="NameAr" class="form-control" />
+            <span asp-validation-for="NameAr" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">الاسم بالإنجليزي</label>
+            <input asp-for="NameEn" class="form-control" />
+            <span asp-validation-for="NameEn" class="text-danger"></span>
+        </div>
+        <div class="col-12">
+            <div class="form-check">
+                <input asp-for="IsActive" class="form-check-input" />
+                <label asp-for="IsActive" class="form-check-label">نشط</label>
+            </div>
+        </div>
+        <div class="col-12 d-flex gap-2">
+            <button class="btn btn-gold">حفظ التعديل</button>
+            <a asp-action="Items" asp-route-lookupTypeId="@Model.LookupTypeId" class="btn btn-outline-secondary">رجوع</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,232 @@
+@model LegalOffice.Domain.Entities.LegalCase
+@inject LegalOffice.Web.Services.IPermissionService PermissionService
+@{
+    ViewData["Title"] = $"القضية - {Model.CaseNumber}";
+    var totalPaid = (decimal)(ViewBag.TotalPaid ?? 0m);
+    var remaining = (decimal)(ViewBag.Remaining ?? 0m);
+    var canManagePayments = (bool)(ViewBag.CanManagePayments ?? false);
+    var canManageCaseRelations = (bool)(ViewBag.CanManageCaseRelations ?? false);
+    var isClosed = Model.ClosedDate != null;
+    var statuses = ViewBag.Statuses as IEnumerable<SelectListItem> ?? Enumerable.Empty<SelectListItem>();
+}
+
+<div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
+    <div>
+        <div class="eyebrow">تفاصيل القضية</div>
+        <h2 class="mb-1">@Model.Title</h2>
+        <div class="text-muted">رقم القضية: @Model.CaseNumber</div>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        @if (await PermissionService.HasPermissionAsync(User, "Cases.Edit") && !isClosed)
+        {
+            <a class="btn btn-gold" asp-action="Edit" asp-route-id="@Model.Id">تعديل القضية</a>
+            <a class="btn btn-outline-primary" asp-controller="Messages" asp-action="Send" asp-route-caseId="@Model.Id">إرسال رسالة</a>
+        }
+        <a class="btn btn-outline-secondary" asp-controller="Cases" asp-action="Index">رجوع</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">الحالة</div><div class="kpi-value fs-4">@Model.CaseStatus.NameAr</div></div></div>
+    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">الأتعاب</div><div class="kpi-value fs-4">@Model.FeesAmount.ToString("N2")</div></div></div>
+    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">المدفوع</div><div class="kpi-value fs-4">@totalPaid.ToString("N2")</div></div></div>
+    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">المتبقي</div><div class="kpi-value fs-4">@remaining.ToString("N2")</div></div></div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="glass-card p-4 watermark-panel mb-4">
+            <h4 class="mb-3">ملخص القضية</h4>
+            <div class="row g-3">
+                <div class="col-md-6"><div class="small text-muted">العميل</div><div class="fw-semibold">@Model.Client.FullName</div></div>
+                <div class="col-md-6"><div class="small text-muted">نوع القضية</div><div class="fw-semibold">@Model.CaseType.NameAr</div></div>
+                <div class="col-md-6"><div class="small text-muted">الأولوية</div><div class="fw-semibold">@Model.Priority.NameAr</div></div>
+                <div class="col-md-6"><div class="small text-muted">المحكمة</div><div class="fw-semibold">@Model.Court?.NameAr</div></div>
+                <div class="col-md-6"><div class="small text-muted">الدائرة</div><div class="fw-semibold">@Model.Circuit</div></div>
+                <div class="col-md-6"><div class="small text-muted">اسم الخصم</div><div class="fw-semibold">@Model.OpponentName</div></div>
+                <div class="col-md-6"><div class="small text-muted">تاريخ البداية</div><div class="fw-semibold">@Model.StartDate.ToString("yyyy/MM/dd")</div></div>
+                <div class="col-12"><div class="small text-muted">الوصف</div><div class="fw-semibold">@Model.Description</div></div>
+            </div>
+        </div>
+
+        <div class="glass-card p-4 mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h4 class="mb-0">المحامين والصلاحيات</h4>
+                @if (canManageCaseRelations && !isClosed)
+                {
+                    <a asp-controller="Cases" asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-secondary">تعديل التوزيع</a>
+                }
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>المحامي</th>
+                            <th>الدور</th>
+                            <th>الصلاحية</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.CaseLawyers)
+                        {
+                            var accessLabel = item.AccessLevel?.NameAr ?? "-";
+                            <tr>
+                                <td>@item.Lawyer.FullName</td>
+                                <td>@(item.IsMainLawyer ? "رئيسي" : item.RoleInCase ?? "مشارك")</td>
+                                <td>@accessLabel</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="glass-card p-4 mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h4 class="mb-0">الجلسات</h4>
+                @if (canManageCaseRelations && !isClosed)
+                {
+                    <a asp-controller="Hearings" asp-action="Create" asp-route-caseId="@Model.Id" class="btn btn-sm btn-gold">إضافة جلسة</a>
+                }
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>الحالة</th>
+                            <th>القرار</th>
+                            <th>الجلسة القادمة</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var hearing in Model.Hearings.OrderByDescending(x => x.HearingDate))
+                        {
+                            <tr>
+                                <td>@hearing.HearingDate.ToString("yyyy/MM/dd")</td>
+                                <td>@hearing.HearingStatus.NameAr</td>
+                                <td>@hearing.CourtDecision</td>
+                                <td>@hearing.NextHearingDate?.ToString("yyyy/MM/dd")</td>
+                                <td>
+                                    @if (canManageCaseRelations && !isClosed)
+                                    {
+                                        <a asp-controller="Hearings" asp-action="Edit" asp-route-id="@hearing.Id" class="btn btn-sm btn-outline-secondary">تعديل</a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="glass-card p-4 mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h4 class="mb-0">الدفعات</h4>
+                @if (canManagePayments && !isClosed)
+                {
+                    <a asp-controller="Payments" asp-action="Create" asp-route-caseId="@Model.Id" class="btn btn-sm btn-gold">إضافة دفعة</a>
+                }
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>المبلغ</th>
+                            <th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var payment in Model.Payments.OrderByDescending(x => x.PaymentDate))
+                        {
+                            <tr>
+                                <td>@payment.PaymentDate.ToString("yyyy/MM/dd")</td>
+                                <td>@payment.Amount.ToString("N2")</td>
+                                <td>@payment.PaymentStatus?.NameAr</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="glass-card p-4 mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h4 class="mb-0">المستندات</h4>
+                @if (canManageCaseRelations && !isClosed)
+                {
+                    <a asp-controller="Documents" asp-action="Create" asp-route-caseId="@Model.Id" class="btn btn-sm btn-gold">إضافة مستند</a>
+                }
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>النوع</th>
+                            <th>الملف</th>
+                            <th>ملاحظات</th>
+                            <th>تاريخ الرفع</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var doc in Model.Documents.OrderByDescending(x => x.UploadedAt))
+                        {
+                            <tr>
+                                <td>@doc.DocumentType.NameAr</td>
+                                <td><a href="@Url.Content("~/" + doc.FilePath)" target="_blank">@doc.FileName</a></td>
+                                <td>@doc.Notes</td>
+                                <td>@doc.UploadedAt.ToString("yyyy/MM/dd")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="glass-card p-4 mb-4">
+            <h4 class="mb-3">تغيير الحالة</h4>
+            @if (!isClosed)
+            {
+            <form asp-action="ChangeStatus" method="post" class="d-grid gap-2">
+                <input type="hidden" name="id" value="@Model.Id" />
+                <select name="statusId" class="form-select">
+                    @foreach (var status in statuses)
+                    {
+                        if (status.Text == Model.CaseStatus.NameAr)
+                        {
+                            <option value="@status.Value" selected="selected">@status.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@status.Value">@status.Text</option>
+                        }
+                    }
+                </select>
+                <button class="btn btn-outline-primary">تحديث الحالة</button>
+            </form>
+            }
+            else
+            {
+                <div class="alert alert-secondary mb-0">القضية مغلقة، لا يمكن تعديل الحالة أو إضافة بيانات جديدة عليها.</div>
+            }
+        </div>
+
+        <div class="glass-card p-4">
+            <h4 class="mb-3">الجدول الزمني</h4>
+            <div class="case-grid">
+                @foreach (var timeline in Model.Timelines.OrderByDescending(x => x.CreatedAt))
+                {
+                    <div class="p-3 rounded-4 border bg-white">
+                        <div class="fw-bold">@timeline.Title</div>
+                        <div class="text-muted small">@timeline.Description</div>
+                        <div class="text-muted small">@timeline.CreatedAt.ToString("yyyy/MM/dd HH:mm")</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

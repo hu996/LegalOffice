@@ -1,0 +1,67 @@
+@model LegalOffice.Application.ViewModels.UserCreateEditVM
+@{
+    ViewData["Title"] = "تعديل مستخدم";
+}
+
+<div class="glass-card p-4 p-md-5">
+    <div class="mb-4">
+        <div class="eyebrow">بيانات الحساب</div>
+        <h2 class="mb-1">تعديل مستخدم</h2>
+    </div>
+
+    <form asp-action="Edit" method="post" class="row g-3">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <input asp-for="Id" type="hidden" />
+        <div class="col-md-6">
+            <label asp-for="FullName" class="form-label"></label>
+            <input asp-for="FullName" class="form-control" />
+            <span asp-validation-for="FullName" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Email" class="form-label"></label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="UserName" class="form-label"></label>
+            <input asp-for="UserName" class="form-control" />
+            <span asp-validation-for="UserName" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="RoleName" class="form-label"></label>
+            <select asp-for="RoleName" asp-items="Model.Roles" class="form-select"></select>
+            <span asp-validation-for="RoleName" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="UserTypeId" class="form-label"></label>
+            <select asp-for="UserTypeId" asp-items="Model.UserTypes" class="form-select">
+                <option value="">-- اختر النوع --</option>
+            </select>
+            <span asp-validation-for="UserTypeId" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="DepartmentId" class="form-label"></label>
+            <select asp-for="DepartmentId" asp-items="Model.Departments" class="form-select">
+                <option value="">-- اختر الإدارة --</option>
+            </select>
+            <span asp-validation-for="DepartmentId" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="LawyerId" class="form-label"></label>
+            <select asp-for="LawyerId" asp-items="Model.Lawyers" class="form-select">
+                <option value="">-- غير مرتبط بمحامي --</option>
+            </select>
+            <span asp-validation-for="LawyerId" class="text-danger"></span>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <div class="form-check">
+                <input asp-for="IsActive" class="form-check-input" />
+                <label asp-for="IsActive" class="form-check-label"></label>
+            </div>
+        </div>
+        <div class="col-12 d-flex gap-2">
+            <button class="btn btn-gold">حفظ التعديل</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">رجوع</a>
+        </div>
+    </form>
+</div>

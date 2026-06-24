@@ -1,0 +1,586 @@
+:root {
+    --bg: #f5efe3;
+    --panel: rgba(255, 255, 255, 0.86);
+    --panel-strong: #ffffff;
+    --text: #1e1b18;
+    --muted: #6b5f53;
+    --primary: #6b4f2a;
+    --primary-dark: #3f2d19;
+    --accent: #c8a15a;
+    --line: rgba(107, 79, 42, 0.14);
+    --shadow: 0 24px 60px rgba(64, 46, 25, 0.12);
+}
+
+html, body {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    color: var(--text);
+    font-family: "Cairo", Tahoma, sans-serif;
+    background:
+        linear-gradient(135deg, rgba(246, 239, 226, 0.98), rgba(242, 233, 216, 0.93)),
+        url("/images/law-watermark.svg");
+    background-size: cover, 480px;
+    background-attachment: fixed, fixed;
+    background-position: center, center;
+    position: relative;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(200, 161, 90, 0.11), transparent 30%),
+        radial-gradient(circle at 80% 10%, rgba(107, 79, 42, 0.08), transparent 25%),
+        radial-gradient(circle at 50% 80%, rgba(63, 45, 25, 0.06), transparent 28%);
+    z-index: 0;
+}
+
+.law-app-shell {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.law-sidebar {
+    width: 290px;
+    padding: 28px 22px;
+    background: linear-gradient(180deg, rgba(32, 23, 16, 0.96), rgba(56, 40, 24, 0.96));
+    color: #fff;
+    box-shadow: 18px 0 44px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 24px;
+    flex: 0 0 290px;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    overflow-y: auto;
+}
+
+.brand-block {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.brand-logo {
+    width: 58px;
+    height: 58px;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.22));
+}
+
+.brand-title {
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: 0.2px;
+}
+
+.brand-subtitle {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.68);
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sidebar-nav a {
+    color: rgba(255, 255, 255, 0.86);
+    text-decoration: none;
+    padding: 13px 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: 0.2s ease;
+}
+
+.sidebar-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar-group-toggle {
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    padding: 13px 14px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: 0.2s ease;
+    text-align: right;
+    width: 100%;
+}
+
+.sidebar-group-toggle:hover {
+    color: #fff;
+    background: rgba(200, 161, 90, 0.16);
+    border-color: rgba(200, 161, 90, 0.3);
+}
+
+.sidebar-subnav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-inline-start: 12px;
+}
+
+.sidebar-subnav a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    padding: 11px 12px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.95rem;
+}
+
+.sidebar-subnav a.active,
+.sidebar-subnav a:hover {
+    color: #fff;
+    background: rgba(200, 161, 90, 0.16);
+    border-color: rgba(200, 161, 90, 0.3);
+}
+
+.sidebar-nav a:hover {
+    color: #fff;
+    background: rgba(200, 161, 90, 0.16);
+    border-color: rgba(200, 161, 90, 0.3);
+    transform: translateX(-2px);
+}
+
+.sidebar-nav a.active {
+    color: #fff;
+    background: rgba(200, 161, 90, 0.24);
+    border-color: rgba(200, 161, 90, 0.36);
+}
+
+.sidebar-footer {
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.law-main {
+    flex: 1;
+    padding: 28px;
+    min-width: 0;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.eyebrow {
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.page-heading {
+    margin: 4px 0 0;
+    font-size: clamp(1.5rem, 3vw, 2.4rem);
+    font-weight: 800;
+    color: var(--primary-dark);
+}
+
+.topbar-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--line);
+    color: var(--primary-dark);
+    font-weight: 700;
+    box-shadow: var(--shadow);
+}
+
+.topbar-badge .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--primary));
+}
+
+.notification-dropdown {
+    position: relative;
+}
+
+.notification-bell-btn {
+    position: relative;
+    min-width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #fff;
+    border-radius: 16px;
+    box-shadow: 0 12px 24px rgba(63, 45, 25, 0.22);
+}
+
+.notification-bell-btn:hover,
+.notification-bell-btn:focus {
+    color: #fff;
+    background: linear-gradient(135deg, #4d3721, #7d5a30);
+    border-color: rgba(255, 255, 255, 0.24);
+    box-shadow: 0 14px 28px rgba(63, 45, 25, 0.28);
+}
+
+.notification-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #b68c39;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(255, 255, 255, 0.95);
+}
+
+.notification-menu {
+    min-width: 360px;
+    max-width: 420px;
+    max-height: 420px;
+    overflow: auto;
+    border-radius: 18px;
+}
+
+.notification-item {
+    white-space: normal;
+    padding-top: 0.9rem;
+    padding-bottom: 0.9rem;
+}
+
+.notification-item.unread {
+    background: rgba(182, 140, 57, 0.08);
+}
+
+.content-surface {
+    background: var(--panel);
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    border-radius: 28px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(14px);
+}
+
+.card-kpi, .form-card, .glass-card {
+    background: var(--panel-strong);
+    border: 1px solid rgba(107, 79, 42, 0.08);
+    border-radius: 22px;
+    box-shadow: 0 12px 28px rgba(64, 46, 25, 0.08);
+}
+
+.card-kpi {
+    min-height: 118px;
+}
+
+.kpi-label {
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.kpi-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--primary-dark);
+}
+
+.btn-gold {
+    background: linear-gradient(135deg, var(--accent), #8f6b33);
+    color: #fff;
+    border: none;
+}
+
+.btn-gold:hover {
+    color: #fff;
+    filter: brightness(0.98);
+}
+
+.table {
+    --bs-table-bg: transparent;
+}
+
+.table thead th {
+    background: rgba(107, 79, 42, 0.06);
+    color: var(--primary-dark);
+    border-bottom-color: rgba(107, 79, 42, 0.12);
+}
+
+.table tbody tr {
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.law-card {
+    border-radius: 22px;
+    border: 1px solid rgba(107, 79, 42, 0.12);
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 14px 30px rgba(64, 46, 25, 0.08);
+}
+
+.watermark-panel {
+    position: relative;
+    overflow: hidden;
+}
+
+.watermark-panel::after {
+    content: "";
+    position: absolute;
+    inset: auto -20px -20px auto;
+    width: 220px;
+    height: 220px;
+    background: url("/images/law-watermark.svg") center/contain no-repeat;
+    opacity: 0.08;
+    pointer-events: none;
+    transform: rotate(-8deg);
+}
+
+.case-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.assignment-row {
+    display: grid;
+    grid-template-columns: 1fr 220px auto;
+    gap: 12px;
+    align-items: center;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(107, 79, 42, 0.04);
+    border: 1px solid rgba(107, 79, 42, 0.08);
+    margin-bottom: 12px;
+}
+
+.pagination .page-link {
+    color: var(--primary-dark);
+    border-color: rgba(107, 79, 42, 0.14);
+}
+
+.pagination .page-item.active .page-link {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: rgba(30, 27, 24, 0.45);
+}
+
+.permission-chip {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    border: 1px solid rgba(107, 79, 42, 0.14);
+    background: rgba(255, 255, 255, 0.82);
+    cursor: pointer;
+    min-height: 100%;
+}
+
+.permission-chip.selected {
+    border-color: rgba(200, 161, 90, 0.48);
+    box-shadow: 0 10px 24px rgba(107, 79, 42, 0.12);
+}
+
+.permission-chip input {
+    margin-top: 4px;
+}
+
+.auth-body {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at top right, rgba(200, 161, 90, 0.18), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(63, 45, 25, 0.14), transparent 30%),
+        linear-gradient(135deg, #f8f2e7, #efe2c8);
+}
+
+.auth-shell {
+    min-height: 100vh;
+    height: 100vh;
+    padding: 16px;
+    overflow: hidden;
+}
+
+.auth-panel {
+    width: min(1180px, 100%);
+    display: grid;
+    grid-template-columns: 1.2fr 0.9fr;
+    gap: 0;
+    border-radius: 30px;
+    overflow: hidden;
+    height: calc(100vh - 32px);
+    box-shadow: 0 30px 80px rgba(64, 46, 25, 0.18);
+    background: rgba(255, 255, 255, 0.76);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(14px);
+}
+
+.auth-hero {
+    min-height: 0;
+    padding: 30px 34px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #3f2d19;
+    background:
+        linear-gradient(145deg, rgba(255, 248, 236, 0.92), rgba(243, 231, 205, 0.95)),
+        url("/images/law-watermark.svg");
+    background-size: cover, 420px;
+    background-position: center, center;
+}
+
+.auth-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    width: fit-content;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.68);
+    border: 1px solid rgba(107, 79, 42, 0.12);
+    font-weight: 700;
+}
+
+.auth-hero-title {
+    font-size: clamp(1.9rem, 3.2vw, 3.1rem);
+    font-weight: 800;
+    line-height: 1.05;
+    margin: 0 0 16px;
+}
+
+.auth-hero-text {
+    max-width: 520px;
+    font-size: 0.98rem;
+    color: rgba(63, 45, 25, 0.82);
+}
+
+.auth-hero-illustration {
+    width: 100%;
+    max-width: 500px;
+    max-height: 300px;
+    object-fit: contain;
+    margin-inline: auto;
+    border-radius: 24px;
+    box-shadow: 0 18px 40px rgba(63, 45, 25, 0.12);
+}
+
+.auth-form-side {
+    padding: 28px 34px;
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.88);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    margin-inline: auto;
+}
+
+.auth-card .form-control {
+    height: 50px;
+    border-radius: 14px;
+}
+
+.auth-card .btn {
+    height: 50px;
+    border-radius: 14px;
+    font-weight: 700;
+}
+
+@media (max-width: 992px) {
+    body {
+        overflow: auto;
+    }
+
+    .law-app-shell {
+        flex-direction: column;
+        height: auto;
+        overflow: visible;
+    }
+
+    .law-sidebar {
+        width: 100%;
+        flex: 1 1 auto;
+        height: auto;
+        position: static;
+        overflow: visible;
+    }
+
+    .law-main {
+        height: auto;
+        overflow: visible;
+    }
+
+    .auth-panel {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    .auth-hero {
+        min-height: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .law-main {
+        padding: 18px;
+    }
+
+    .content-surface {
+        padding: 18px;
+        border-radius: 22px;
+    }
+
+    .topbar {
+        flex-direction: column;
+    }
+
+    .assignment-row {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-shell {
+        padding: 10px;
+        overflow: auto;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .auth-form-side {
+        padding: 24px;
+    }
+
+    .auth-panel {
+        height: auto;
+    }
+}

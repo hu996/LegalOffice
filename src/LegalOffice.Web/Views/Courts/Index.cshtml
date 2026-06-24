@@ -1,0 +1,67 @@
+@model LegalOffice.Application.ViewModels.PagedResult<LegalOffice.Domain.Entities.Lookup>
+@{
+    ViewData["Title"] = "المحاكم";
+    var search = ViewBag.Search as string;
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <div class="eyebrow">إعدادات المكتب</div>
+        <h2 class="mb-1">المحاكم</h2>
+        <div class="text-muted">إضافة وتعديل المحاكم المستخدمة داخل القضايا.</div>
+    </div>
+    <a class="btn btn-gold" asp-action="Create">إضافة محكمة</a>
+</div>
+
+<div class="glass-card p-3 p-md-4 mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-10">
+            <input name="search" value="@search" class="form-control" placeholder="ابحث باسم المحكمة..." />
+        </div>
+        <div class="col-md-2 d-grid">
+            <button class="btn btn-outline-primary">بحث</button>
+        </div>
+    </form>
+</div>
+
+<div class="table-responsive glass-card p-3 p-md-4">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>الاسم</th>
+                <th>الاسم الإنجليزي</th>
+                <th>الحالة</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>@item.NameAr</td>
+                    <td>@item.NameEn</td>
+                    <td><span class="badge text-bg-light border">@(item.IsActive ? "نشط" : "غير نشط")</span></td>
+                    <td class="text-nowrap">
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">تعديل</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @{
+        var pager = new LegalOffice.Application.ViewModels.PaginationVM
+        {
+            ControllerName = "Courts",
+            ActionName = "Index",
+            Page = Model.Page,
+            TotalPages = Model.TotalPages,
+            RouteValues = new Dictionary<string, object?>
+            {
+                ["search"] = search,
+                ["pageSize"] = Model.PageSize
+            }
+        };
+    }
+    <partial name="_Pagination" model="pager" />
+</div>

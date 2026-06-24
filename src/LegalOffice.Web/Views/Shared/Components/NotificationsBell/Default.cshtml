@@ -1,0 +1,40 @@
+@model LegalOffice.Application.ViewModels.NotificationBellVM
+
+<div class="dropdown notification-dropdown">
+    <button class="btn btn-outline-light notification-bell-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <span class="notification-bell-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                <path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm8-6V11a8 8 0 1 0-16 0v5l-2 2v1h20v-1l-2-2zm-2 1H6v-6a6 6 0 1 1 12 0v6z"/>
+            </svg>
+        </span>
+        @if (Model.UnreadCount > 0)
+        {
+            <span class="notification-badge">@Model.UnreadCount</span>
+        }
+    </button>
+
+    <div class="dropdown-menu dropdown-menu-end shadow notification-menu">
+        <div class="px-3 py-2 border-bottom d-flex align-items-center justify-content-between">
+            <div class="fw-semibold">الإشعارات</div>
+            <a asp-controller="Notifications" asp-action="Index" class="small text-decoration-none">عرض الكل</a>
+        </div>
+
+        @if (Model.Items.Count == 0)
+        {
+            <div class="px-3 py-4 text-muted small">لا توجد إشعارات حالياً.</div>
+        }
+        else
+        {
+            @foreach (var item in Model.Items)
+            {
+                <a class="dropdown-item notification-item @(item.IsRead ? "" : "unread")" asp-controller="Notifications" asp-action="Open" asp-route-id="@item.Id">
+                    <div class="d-flex justify-content-between gap-3">
+                        <div class="fw-semibold">@item.Title</div>
+                        <div class="small text-muted">@item.CreatedAt.ToString("dd/MM HH:mm")</div>
+                    </div>
+                    <div class="small text-muted text-wrap">@item.Body</div>
+                </a>
+            }
+        }
+    </div>
+</div>

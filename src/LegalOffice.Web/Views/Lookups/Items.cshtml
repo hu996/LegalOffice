@@ -1,0 +1,81 @@
+@model LegalOffice.Application.ViewModels.LookupItemIndexVM
+@using LegalOffice.Application.ViewModels
+@{
+    ViewData["Title"] = Model.LookupType.NameAr;
+    var search = ViewBag.Search as string;
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <div class="eyebrow">إدارة نوع lookup</div>
+        <h2 class="mb-1">@Model.LookupType.NameAr</h2>
+        <div class="text-muted">الكود: @Model.LookupType.Code</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary" asp-action="Index">الرجوع للأنواع</a>
+        <a class="btn btn-gold" asp-action="Create" asp-route-lookupTypeId="@Model.LookupType.Id">إضافة عنصر</a>
+    </div>
+</div>
+
+<div class="glass-card p-3 p-md-4 mb-4">
+    <form method="get" class="row g-3">
+        <input type="hidden" name="lookupTypeId" value="@Model.LookupType.Id" />
+        <div class="col-md-10">
+            <input name="search" value="@search" class="form-control" placeholder="ابحث داخل هذا النوع..." />
+        </div>
+        <div class="col-md-2 d-grid">
+            <button class="btn btn-outline-primary">بحث</button>
+        </div>
+    </form>
+</div>
+
+<div class="table-responsive glass-card p-3 p-md-4">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>الاسم</th>
+                <th>الاسم الإنجليزي</th>
+                <th>نشط</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items.Items)
+            {
+                <tr>
+                    <td>@item.NameAr</td>
+                    <td>@item.NameEn</td>
+                    <td><span class="badge text-bg-light border">@(item.IsActive ? "نعم" : "لا")</span></td>
+                    <td class="text-nowrap">
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">تعديل</a>
+                        <form asp-action="ToggleStatus" asp-route-id="@item.Id" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button class="btn btn-sm btn-outline-warning">@(item.IsActive ? "تعطيل" : "تفعيل")</button>
+                        </form>
+                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('متأكد من حذف القيمة؟');">
+                            @Html.AntiForgeryToken()
+                            <button class="btn btn-sm btn-outline-danger">حذف</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @{
+        var pager = new PaginationVM
+        {
+            ControllerName = "Lookups",
+            ActionName = "Items",
+            Page = Model.Items.Page,
+            TotalPages = Model.Items.TotalPages,
+            RouteValues = new Dictionary<string, object?>
+            {
+                ["lookupTypeId"] = Model.LookupType.Id,
+                ["search"] = search,
+                ["pageSize"] = Model.Items.PageSize
+            }
+        };
+    }
+    <partial name="_Pagination" model="pager" />
+</div>

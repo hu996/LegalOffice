@@ -1,0 +1,51 @@
+@model LegalOffice.Application.ViewModels.PaymentCreateEditVM
+@{
+    ViewData["Title"] = "إضافة دفعة";
+}
+
+<div class="glass-card p-4">
+    <h2 class="mb-1">إضافة دفعة جديدة</h2>
+    <div class="text-muted mb-4">تسجيل الدفعات وربطها بحالة السداد والمتابعة المالية.</div>
+
+    <form method="post" class="row g-3">
+        <input asp-for="CaseId" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="col-md-4">
+            <label class="form-label">المبلغ</label>
+            <input asp-for="Amount" type="number" step="0.01" class="form-control" />
+            <span asp-validation-for="Amount" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">تاريخ الدفعة</label>
+            <input asp-for="PaymentDate" type="date" class="form-control" />
+            <span asp-validation-for="PaymentDate" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">حالة الدفع</label>
+            <select asp-for="PaymentStatusId" asp-items="Model.PaymentStatuses" class="form-select"></select>
+            <span asp-validation-for="PaymentStatusId" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">طريقة الدفع</label>
+            <select asp-for="PaymentMethodId" asp-items="Model.PaymentMethods" class="form-select">
+                <option value="">اختر الطريقة</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">رقم المرجع</label>
+            <input asp-for="ReferenceNumber" class="form-control" />
+        </div>
+        <div class="col-12">
+            <label class="form-label">ملاحظات</label>
+            <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="col-12 d-flex gap-2">
+            <button class="btn btn-gold">حفظ الدفعة</button>
+            <a asp-controller="Cases" asp-action="Details" asp-route-id="@Model.CaseId" class="btn btn-outline-secondary">رجوع</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

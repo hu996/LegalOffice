@@ -1,0 +1,23 @@
+@model LegalOffice.Application.ViewModels.PaginationVM
+@using Microsoft.AspNetCore.Routing
+
+@if (Model.TotalPages > 1)
+{
+    var routeValues = new RouteValueDictionary(Model.RouteValues);
+    <nav class="mt-3">
+        <ul class="pagination justify-content-center mb-0">
+            <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action(Model.ActionName, Model.ControllerName, new RouteValueDictionary(routeValues) { ["page"] = Model.Page - 1 })">السابق</a>
+            </li>
+            @for (var i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.Page ? "active" : "")">
+                    <a class="page-link" href="@Url.Action(Model.ActionName, Model.ControllerName, new RouteValueDictionary(routeValues) { ["page"] = i })">@i</a>
+                </li>
+            }
+            <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                <a class="page-link" href="@Url.Action(Model.ActionName, Model.ControllerName, new RouteValueDictionary(routeValues) { ["page"] = Model.Page + 1 })">التالي</a>
+            </li>
+        </ul>
+    </nav>
+}

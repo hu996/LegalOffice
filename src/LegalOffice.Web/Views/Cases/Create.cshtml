@@ -1,0 +1,119 @@
+@model LegalOffice.Application.ViewModels.CaseCreateEditVM
+@using System.Text.Json
+@{
+    ViewData["Title"] = "إضافة قضية";
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <h2 class="mb-1">إضافة قضية جديدة</h2>
+        <div class="text-muted">تسجيل القضية والمحامين والجلسات والدفعات من مكان واحد.</div>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">رجوع للقضايا</a>
+</div>
+
+<form method="post" class="form-card p-4">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label class="form-label">رقم القضية</label>
+            <input asp-for="CaseNumber" class="form-control" />
+            <span asp-validation-for="CaseNumber" class="text-danger"></span>
+        </div>
+        <div class="col-md-9">
+            <label class="form-label">عنوان القضية</label>
+            <input asp-for="Title" class="form-control" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">العميل</label>
+            <select asp-for="ClientId" asp-items="Model.Clients" class="form-select"></select>
+            <span asp-validation-for="ClientId" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">نوع القضية</label>
+            <select asp-for="CaseTypeId" asp-items="Model.CaseTypes" class="form-select" id="caseTypeId"></select>
+            <span asp-validation-for="CaseTypeId" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">حالة القضية</label>
+            <select asp-for="CaseStatusId" asp-items="Model.CaseStatuses" class="form-select"></select>
+            <span asp-validation-for="CaseStatusId" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">المحكمة</label>
+            <select asp-for="CourtId" asp-items="Model.Courts" class="form-select">
+                <option value="">اختر المحكمة</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">الدائرة</label>
+            <input asp-for="Circuit" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">تاريخ البداية</label>
+            <input asp-for="StartDate" type="date" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">الأتعاب</label>
+            <input asp-for="FeesAmount" type="number" step="0.01" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">الأولوية</label>
+            <select asp-for="PriorityId" asp-items="Model.Priorities" class="form-select"></select>
+            <span asp-validation-for="PriorityId" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">عدد المحامين</label>
+            <input asp-for="LawyersCount" id="lawyersCount" type="number" min="1" max="20" class="form-control" />
+            <span asp-validation-for="LawyersCount" class="text-danger"></span>
+        </div>
+        <div class="col-12">
+            <label class="form-label">وصف القضية</label>
+            <textarea asp-for="Description" rows="3" class="form-control"></textarea>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">اسم الخصم</label>
+            <input asp-for="OpponentName" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">محامي الخصم</label>
+            <input asp-for="OpponentLawyer" class="form-control" />
+        </div>
+    </div>
+
+    <hr class="my-4" />
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h4 class="mb-1">المحامين المرتبطين بالقضية</h4>
+            <div class="text-muted">المحامين هيتفلتروا تلقائيًا حسب نوع القضية، والصلاحية كلها جاية من lookup.</div>
+        </div>
+    </div>
+
+    <div id="assignmentContainer" class="case-grid"></div>
+    <span asp-validation-for="LawyerAssignments" class="text-danger"></span>
+
+    <div class="d-flex gap-2 mt-4">
+        <button class="btn btn-gold px-4">حفظ القضية</button>
+        <a asp-action="Index" class="btn btn-outline-secondary px-4">إلغاء</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/case-form.js" asp-append-version="true"></script>
+    <script>
+        window.initCaseAssignmentForm({
+            countInputId: 'lawyersCount',
+            caseTypeSelectId: 'caseTypeId',
+            containerId: 'assignmentContainer',
+            lawyers: [],
+            accessLevels: @Html.Raw(JsonSerializer.Serialize(Model.AccessLevels.Select(x => new { value = x.Value, text = x.Text }))),
+            initialRows: [],
+            eligibleLawyersUrl: '@Url.Action("EligibleLawyers", "Cases")',
+            lawyerSelectPlaceholder: 'اختر المحامي'
+        });
+    </script>
+}

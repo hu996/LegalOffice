@@ -1,0 +1,62 @@
+@model LegalOffice.Application.ViewModels.ReportSummaryVM
+@{
+    ViewData["Title"] = "التقارير العامة";
+}
+
+<div class="glass-card p-4 mb-4">
+    <h2 class="mb-1">التقارير العامة</h2>
+    <div class="text-muted mb-3">تحليل شامل للقضايا مع فلاتر اختيارية للمحكمة والمحامي ونوع القضية والحالة والتاريخ.</div>
+    <partial name="_Filters" model="Model.Filters" />
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">إجمالي القضايا</div><div class="kpi-value">@Model.TotalCases</div></div></div>
+    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">القضايا المفتوحة</div><div class="kpi-value">@Model.OpenCases</div></div></div>
+    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">القضايا المغلقة</div><div class="kpi-value">@Model.ClosedCases</div></div></div>
+    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">المتبقي من الأتعاب</div><div class="kpi-value">@Model.TotalRemaining</div></div></div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="glass-card p-4 h-100">
+            <h5 class="mb-3">حسب المحكمة</h5>
+            <table class="table table-sm mb-0">
+                <thead><tr><th>المحكمة</th><th>العدد</th></tr></thead>
+                <tbody>
+                @foreach (var item in Model.ByCourt)
+                {
+                    <tr><td>@item.Label</td><td>@item.Count</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="glass-card p-4 h-100">
+            <h5 class="mb-3">حسب نوع القضية</h5>
+            <table class="table table-sm mb-0">
+                <thead><tr><th>النوع</th><th>العدد</th></tr></thead>
+                <tbody>
+                @foreach (var item in Model.ByType)
+                {
+                    <tr><td>@item.Label</td><td>@item.Count</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="glass-card p-4 h-100">
+            <h5 class="mb-3">حسب الحالة</h5>
+            <table class="table table-sm mb-0">
+                <thead><tr><th>الحالة</th><th>العدد</th></tr></thead>
+                <tbody>
+                @foreach (var item in Model.ByStatus)
+                {
+                    <tr><td>@item.Label</td><td>@item.Count</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

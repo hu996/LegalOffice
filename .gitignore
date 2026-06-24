@@ -1,0 +1,13 @@
+.vs/
+**/bin/
+**/obj/
+_build/
+*.log
+*.err
+*.user
+*.suo
+*.cache
+*.aps
+*.pdb
+*.db
+*.sqlite

@@ -1,0 +1,100 @@
+@model LegalOffice.Application.ViewModels.PagedResult<LegalOffice.Domain.Entities.LegalCase>
+@inject LegalOffice.Web.Services.IPermissionService PermissionService
+@{
+    ViewData["Title"] = "القضايا";
+    var statuses = ViewBag.Statuses as IEnumerable<SelectListItem> ?? Enumerable.Empty<SelectListItem>();
+    var search = ViewBag.Search as string;
+    var statusId = ViewBag.StatusId?.ToString();
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <div class="eyebrow">إدارة القضايا</div>
+        <h2 class="mb-1">القضايا المسجلة</h2>
+        <div class="text-muted">عرض سريع للقضايا مع إمكانية الوصول حسب الصلاحيات.</div>
+    </div>
+    @if (await PermissionService.HasPermissionAsync(User, "Cases.Create"))
+    {
+        <a class="btn btn-gold" asp-action="Create">إضافة قضية</a>
+    }
+</div>
+
+<div class="glass-card p-3 p-md-4 mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-6">
+            <input name="search" class="form-control" placeholder="ابحث برقم القضية أو اسم العميل..." value="@search" />
+        </div>
+        <div class="col-md-4">
+            <select name="statusId" class="form-select">
+                <option value="">كل الحالات</option>
+                @foreach (var status in statuses)
+                {
+                    if (status.Value == statusId)
+                    {
+                        <option value="@status.Value" selected>@status.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@status.Value">@status.Text</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="col-md-2 d-grid">
+            <button class="btn btn-outline-primary">تصفية</button>
+        </div>
+    </form>
+</div>
+
+<div class="table-responsive glass-card p-3 p-md-4">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>رقم</th>
+                <th>العنوان</th>
+                <th>العميل</th>
+                <th>النوع</th>
+                <th>الحالة</th>
+                <th>المحامين</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in Model.Items)
+            {
+                <tr>
+                    <td>@c.CaseNumber</td>
+                    <td>@c.Title</td>
+                    <td>@c.Client.FullName</td>
+                    <td>@c.CaseType.NameAr</td>
+                    <td><span class="badge text-bg-light border">@c.CaseStatus.NameAr</span></td>
+                    <td>@c.CaseLawyers.Count</td>
+                    <td class="text-nowrap">
+                        <a asp-action="Details" asp-route-id="@c.Id" class="btn btn-sm btn-outline-secondary">تفاصيل</a>
+                        @if (await PermissionService.HasPermissionAsync(User, "Cases.Edit") && c.ClosedDate == null)
+                        {
+                            <a asp-action="Edit" asp-route-id="@c.Id" class="btn btn-sm btn-outline-primary">تعديل</a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @{
+        var pager = new LegalOffice.Application.ViewModels.PaginationVM
+        {
+            ControllerName = "Cases",
+            ActionName = "Index",
+            Page = Model.Page,
+            TotalPages = Model.TotalPages,
+            RouteValues = new Dictionary<string, object?>
+            {
+                ["search"] = search,
+                ["statusId"] = statusId,
+                ["pageSize"] = Model.PageSize
+            }
+        };
+    }
+    <partial name="_Pagination" model="pager" />
+</div>

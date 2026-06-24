@@ -1,0 +1,38 @@
+@model LegalOffice.Application.ViewModels.DocumentCreateEditVM
+@{
+    ViewData["Title"] = "إضافة مستند";
+}
+
+<div class="glass-card p-4">
+    <h2 class="mb-1">إضافة مستند للقضية</h2>
+    <div class="text-muted mb-4">ارفع المستند وحدد نوعه عشان يبان مرتب داخل ملف القضية.</div>
+
+    <form method="post" enctype="multipart/form-data" class="row g-3">
+        <input asp-for="CaseId" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="col-md-4">
+            <label class="form-label">نوع المستند</label>
+            <select asp-for="DocumentTypeId" asp-items="Model.DocumentTypes" class="form-select"></select>
+            <span asp-validation-for="DocumentTypeId" class="text-danger"></span>
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">الملف</label>
+            <input asp-for="File" type="file" class="form-control" />
+            <span asp-validation-for="File" class="text-danger"></span>
+        </div>
+        <div class="col-12">
+            <label class="form-label">ملاحظات</label>
+            <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+        </div>
+
+        <div class="col-12 d-flex gap-2">
+            <button class="btn btn-gold">حفظ المستند</button>
+            <a asp-controller="Cases" asp-action="Details" asp-route-id="@Model.CaseId" class="btn btn-outline-secondary">رجوع</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

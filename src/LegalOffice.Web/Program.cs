@@ -1,0 +1,65 @@
+using LegalOffice.Infrastructure;
+using LegalOffice.Infrastructure.Persistence;
+using LegalOffice.Web.Filters;
+using LegalOffice.Web.Services;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
+using System.Globalization;
+
+var builder = WebApplication.CreateBuilder(args);
+QuestPDF.Settings.License = LicenseType.Community;
+
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<PermissionAuthorizationFilter>();
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Account/Login";
+    options.AccessDeniedPath = "/Account/AccessDenied";
+});
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.AddService<PermissionAuthorizationFilter>();
+});
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var culture = new CultureInfo("ar-EG");
+    options.DefaultRequestCulture = new RequestCulture(culture);
+    options.SupportedCultures = new[] { culture };
+    options.SupportedUICultures = new[] { culture };
+});
+
+var app = builder.Build();
+var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
+
+app.UseRequestLocalization();
+
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var services = scope.ServiceProvider;
+        var db = services.GetRequiredService<AppDbContext>();
+        await db.Database.MigrateAsync();
+        await DbSeeder.SeedAsync(services);
+    }
+    catch (Exception ex)
+    {
+        startupLogger.LogError(ex, "An error occurred during application startup database initialization.");
+    }
+}
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Dashboard/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllerRoute(name: "default", pattern: "{controller=Dashboard}/{action=Index}/{id?}");
+app.Run();

@@ -1,0 +1,48 @@
+@model LegalOffice.Application.ViewModels.HearingCreateEditVM
+@{
+    ViewData["Title"] = "إضافة جلسة";
+}
+
+<div class="glass-card p-4">
+    <h2 class="mb-1">إضافة جلسة للقضية</h2>
+    <div class="text-muted mb-4">تسجيل الجلسة وتاريخها وقرارها والجلسة القادمة.</div>
+
+    <form method="post" class="row g-3">
+        <input asp-for="CaseId" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="col-md-4">
+            <label class="form-label">تاريخ الجلسة</label>
+            <input asp-for="HearingDate" type="date" class="form-control" />
+            <span asp-validation-for="HearingDate" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">حالة الجلسة</label>
+            <select asp-for="HearingStatusId" asp-items="Model.HearingStatuses" class="form-select"></select>
+            <span asp-validation-for="HearingStatusId" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">تاريخ الجلسة القادمة</label>
+            <input asp-for="NextHearingDate" type="date" class="form-control" />
+        </div>
+        <div class="col-12">
+            <label class="form-label">قرار الجلسة</label>
+            <textarea asp-for="CourtDecision" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="col-12">
+            <label class="form-label">المطلوب للجلسة القادمة</label>
+            <textarea asp-for="NextRequirements" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="col-12">
+            <label class="form-label">ملاحظات</label>
+            <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="col-12 d-flex gap-2">
+            <button class="btn btn-gold">حفظ الجلسة</button>
+            <a asp-controller="Cases" asp-action="Details" asp-route-id="@Model.CaseId" class="btn btn-outline-secondary">رجوع</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

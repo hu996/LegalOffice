@@ -1,0 +1,33 @@
+@model LegalOffice.Application.ViewModels.DashboardVM
+@{
+    ViewData["Title"] = "لوحة التحكم";
+}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">إجمالي القضايا</div><div class="kpi-value">@Model.TotalCases</div></div></div>
+    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">القضايا المفتوحة</div><div class="kpi-value">@Model.OpenCases</div></div></div>
+    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">جلسات اليوم</div><div class="kpi-value">@Model.TodayHearings</div></div></div>
+    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">جلسات الأسبوع</div><div class="kpi-value">@Model.WeekHearings</div></div></div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="glass-card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">ملخص مالي</h4>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-4"><div class="p-3 rounded-4 bg-light border"><div class="text-muted small">مدفوع هذا الشهر</div><div class="fs-4 fw-bold">@Model.MonthPayments.ToString("N2")</div></div></div>
+                <div class="col-md-4"><div class="p-3 rounded-4 bg-light border"><div class="text-muted small">المتبقي</div><div class="fs-4 fw-bold">@Model.TotalRemaining.ToString("N2")</div></div></div>
+                <div class="col-md-4"><div class="p-3 rounded-4 bg-light border"><div class="text-muted small">القضايا الخاصة بي</div><div class="fs-4 fw-bold">@Model.MyCases</div></div></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="glass-card p-4">
+            <h4 class="mb-3">ملاحظات سريعة</h4>
+            <div class="text-muted mb-2">يمكنك متابعة القضايا، الجلسات، والدفعات من نفس النظام دون الحاجة للتنقل بين ملفات منفصلة.</div>
+            <div class="text-muted">الخلفية والهوية البصرية مصممة لتناسب مكتب محاماة بشكل هادئ ورسمي.</div>
+        </div>
+    </div>
+</div>

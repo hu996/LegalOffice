@@ -1,0 +1,12 @@
+using Microsoft.AspNetCore.Identity;
+namespace LegalOffice.Domain.Entities;
+public class ApplicationUser : IdentityUser
+{
+    public string FullName { get; set; } = string.Empty;
+    public int? UserTypeId { get; set; }
+    public Lookup? UserType { get; set; }
+    public int? DepartmentId { get; set; }
+    public Lookup? Department { get; set; }
+    public int? LawyerId { get; set; }
+    public Lawyer? Lawyer { get; set; }
+}

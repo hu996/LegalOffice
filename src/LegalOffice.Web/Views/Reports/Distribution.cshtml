@@ -1,0 +1,55 @@
+@model LegalOffice.Application.ViewModels.ReportDistributionVM
+@{
+    ViewData["Title"] = "توزيع القضايا";
+}
+
+<div class="glass-card p-4 mb-4">
+    <h2 class="mb-1">توزيع القضايا</h2>
+    <div class="text-muted mb-3">عرض توزيع القضايا حسب النوع والحالة والمحكمة مع فلاتر اختيارية.</div>
+    <partial name="_Filters" model="Model.Filters" />
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="glass-card p-4 h-100">
+            <h5 class="mb-3">حسب النوع</h5>
+            <table class="table table-sm mb-0">
+                <thead><tr><th>النوع</th><th>العدد</th></tr></thead>
+                <tbody>
+                @foreach (var item in Model.ByType)
+                {
+                    <tr><td>@item.TypeName</td><td>@item.Count</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="glass-card p-4 h-100">
+            <h5 class="mb-3">حسب الحالة</h5>
+            <table class="table table-sm mb-0">
+                <thead><tr><th>الحالة</th><th>العدد</th></tr></thead>
+                <tbody>
+                @foreach (var item in Model.ByStatus)
+                {
+                    <tr><td>@item.StatusName</td><td>@item.Count</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="glass-card p-4 h-100">
+            <h5 class="mb-3">حسب المحكمة</h5>
+            <table class="table table-sm mb-0">
+                <thead><tr><th>المحكمة</th><th>العدد</th></tr></thead>
+                <tbody>
+                @foreach (var item in Model.ByCourt)
+                {
+                    <tr><td>@item.Label</td><td>@item.Count</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

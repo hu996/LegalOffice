@@ -1,0 +1,41 @@
+@model LegalOffice.Application.ViewModels.ReportFiltersVM
+
+<form method="get" class="row g-3 mb-4">
+    <div class="col-md-3">
+        <label class="form-label">المحكمة</label>
+        <select asp-for="CourtId" asp-items="Model.Courts" class="form-select">
+            <option value="">الكل</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">المحامي</label>
+        <select asp-for="LawyerId" asp-items="Model.Lawyers" class="form-select">
+            <option value="">الكل</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">نوع القضية</label>
+        <select asp-for="CaseTypeId" asp-items="Model.CaseTypes" class="form-select">
+            <option value="">الكل</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">حالة القضية</label>
+        <select asp-for="CaseStatusId" asp-items="Model.CaseStatuses" class="form-select">
+            <option value="">الكل</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">من تاريخ</label>
+        <input asp-for="FromDate" type="date" class="form-control" />
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">إلى تاريخ</label>
+        <input asp-for="ToDate" type="date" class="form-control" />
+    </div>
+    <div class="col-12 d-flex flex-wrap gap-2">
+        <button type="submit" name="Format" value="" class="btn btn-gold">تطبيق الفلتر</button>
+        <button type="submit" name="Format" value="pdf" class="btn btn-outline-danger">PDF</button>
+        <button type="submit" name="Format" value="excel" class="btn btn-outline-success">Excel</button>
+    </div>
+</form>

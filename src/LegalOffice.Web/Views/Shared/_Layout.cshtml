@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - مكتب المحاماة</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    @{
+        var toastSuccess = TempData["ToastSuccess"] as string;
+        var toastError = TempData["ToastError"] as string;
+        var hasValidationErrors = ViewContext?.ViewData?.ModelState?.ErrorCount > 0;
+        var friendlyFieldNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var modelType = ViewData.Model?.GetType();
+        if (modelType != null)
+        {
+            foreach (var prop in modelType.GetProperties(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
+            {
+                var attrs = prop.GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.DisplayAttribute), true);
+                var displayAttr = attrs.Length > 0 ? attrs[0] as System.ComponentModel.DataAnnotations.DisplayAttribute : null;
+                var displayName = displayAttr?.Name;
+
+                friendlyFieldNames[prop.Name] = string.IsNullOrWhiteSpace(displayName) ? prop.Name : displayName!;
+            }
+        }
+        var validationErrors = ViewContext?.ViewData?.ModelState?
+            .Where(kvp => kvp.Value?.Errors.Count > 0)
+            .SelectMany(kvp => kvp.Value!.Errors.Select(err => new
+            {
+                Field = kvp.Key,
+                Message = string.IsNullOrWhiteSpace(err.ErrorMessage) ? "خطأ غير متوقع." : err.ErrorMessage
+            }))
+            .ToList();
+        var validationMessages = validationErrors == null
+            ? new List<string>()
+            : validationErrors.Select(e =>
+            {
+                var label = string.IsNullOrWhiteSpace(e.Field)
+                    ? "الحقل"
+                    : (friendlyFieldNames.TryGetValue(e.Field, out var display) ? display : e.Field);
+                return $"{label}: {e.Message}";
+            }).ToList();
+    }
+    <div class="law-app-shell">
+        <aside class="law-sidebar">
+            <div class="brand-block">
+                <img src="~/images/law-logo.svg" alt="مكتب المحاماة" class="brand-logo" />
+                <div>
+                    <div class="brand-title">مكتب المحاماة</div>
+                    <div class="brand-subtitle">إدارة القضايا والمدفوعات</div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                @await Component.InvokeAsync("SidebarMenu")
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="text-white-50 small">مرحبًا، @User.Identity?.Name</div>
+                <a asp-controller="Account" asp-action="Logout" class="btn btn-gold btn-sm mt-2 w-100">خروج</a>
+            </div>
+        </aside>
+
+        <main class="law-main">
+            <header class="topbar">
+                <div>
+                    <div class="eyebrow">نظام قانوني احترافي</div>
+                    <h1 class="page-heading">@((ViewData["Title"] as string) ?? "مكتب المحاماة")</h1>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    @await Component.InvokeAsync("NotificationsBell")
+                    <div class="topbar-badge">
+                        <span class="dot"></span>
+                        نظام متابعة القضايا
+                    </div>
+                </div>
+            </header>
+
+            <section class="content-surface">
+                @RenderBody()
+            </section>
+        </main>
+    </div>
+
+    <div class="modal fade" id="appPopupModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="appPopupModalTitle">تنبيه</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+                </div>
+                <div class="modal-body" id="appPopupModalBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-gold" data-bs-dismiss="modal">حسنًا</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function () {
+            const successMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(toastSuccess));
+            const errorMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(toastError));
+            const validationMessages = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(validationMessages));
+            const hasValidationMessages = @((validationMessages.Count > 0).ToString().ToLowerInvariant());
+
+            const modalEl = document.getElementById('appPopupModal');
+            const modalTitleEl = document.getElementById('appPopupModalTitle');
+            const modalBodyEl = document.getElementById('appPopupModalBody');
+            if (!modalEl || !modalTitleEl || !modalBodyEl) return;
+
+            let title = '';
+            let bodyHtml = '';
+
+            if (successMessage && successMessage.trim()) {
+                title = 'تم بنجاح';
+                bodyHtml = `<div class="alert alert-success mb-0">${successMessage}</div>`;
+            } else if (errorMessage && errorMessage.trim()) {
+                title = 'حدث خطأ';
+                bodyHtml = `<div class="alert alert-danger mb-0">${errorMessage}</div>`;
+            } else if (hasValidationMessages) {
+                title = 'راجع البيانات';
+                bodyHtml = `<div class="alert alert-danger mb-0"><div class="fw-bold mb-2">فيه أخطاء في البيانات:</div><ul class="mb-0">${validationMessages.map(x => `<li>${x}</li>`).join('')}</ul></div>`;
+            }
+
+            if (!bodyHtml) return;
+
+            modalTitleEl.textContent = title;
+            modalBodyEl.innerHTML = bodyHtml;
+            new bootstrap.Modal(modalEl).show();
+        })();
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

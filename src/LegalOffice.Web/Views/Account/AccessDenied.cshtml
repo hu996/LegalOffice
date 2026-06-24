@@ -1,0 +1,14 @@
+@{
+    ViewData["Title"] = "Access Denied";
+}
+
+<div class="d-flex justify-content-center align-items-center" style="min-height: 60vh;">
+    <div class="glass-card p-4 p-md-5 text-center" style="max-width: 520px; width: 100%;">
+        <div class="eyebrow mb-2">صلاحية غير كافية</div>
+        <h2 class="mb-3">ليس لديك إذن للدخول إلى هذه الصفحة</h2>
+        <p class="text-muted mb-4">
+            لو تعتقد أن هذا خطأ، تواصل مع مسؤول النظام لطلب الصلاحية المناسبة.
+        </p>
+        <a asp-controller="Dashboard" asp-action="Index" class="btn btn-gold">العودة للوحة التحكم</a>
+    </div>
+</div>

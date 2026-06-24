@@ -1,0 +1,36 @@
+@model IReadOnlyList<LegalOffice.Application.ViewModels.SidebarMenuGroupVM>
+@{
+    var currentController = (ViewContext.RouteData.Values["controller"] as string) ?? string.Empty;
+    var currentAction = (ViewContext.RouteData.Values["action"] as string) ?? string.Empty;
+}
+
+<a asp-controller="Dashboard" asp-action="Index" class="@(string.Equals(currentController, "Dashboard", StringComparison.OrdinalIgnoreCase) ? "active" : "")">لوحة التحكم</a>
+@foreach (var group in Model)
+{
+    if (group.Title == "عام")
+    {
+        foreach (var item in group.Items)
+        {
+            var active = string.Equals(currentController, item.Controller, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(currentAction, item.Action, StringComparison.OrdinalIgnoreCase);
+            <a asp-controller="@item.Controller" asp-action="@item.Action" class="@(active ? "active" : "")">@item.Label</a>
+        }
+    }
+    else
+    {
+        var groupId = "group_" + Math.Abs(group.Title.GetHashCode());
+        <div class="sidebar-group">
+            <button class="sidebar-group-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#@groupId" aria-expanded="false">
+                @group.Title
+            </button>
+            <div class="collapse sidebar-subnav" id="@groupId">
+                @foreach (var item in group.Items)
+                {
+                    var active = string.Equals(currentController, item.Controller, StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(currentAction, item.Action, StringComparison.OrdinalIgnoreCase);
+                    <a asp-controller="@item.Controller" asp-action="@item.Action" class="@(active ? "active" : "")">@item.Label</a>
+                }
+            </div>
+        </div>
+    }
+}

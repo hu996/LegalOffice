@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" fill="none">
+  <defs>
+    <linearGradient id="g1" x1="126" y1="103" x2="783" y2="606" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C8A15A"/>
+      <stop offset="1" stop-color="#3F2D19"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="152" y1="133" x2="723" y2="557" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF7EA"/>
+      <stop offset="1" stop-color="#F1E0BE"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="700" rx="44" fill="url(#g2)"/>
+  <circle cx="680" cy="145" r="138" fill="#C8A15A" fill-opacity=".10"/>
+  <circle cx="190" cy="560" r="170" fill="#3F2D19" fill-opacity=".08"/>
+  <path d="M448 116c7 0 13 6 13 13v17c53 5 96 30 121 66h31c9 0 16 7 16 16s-7 16-16 16h-14c5 12 8 25 8 38h14c9 0 16 7 16 16s-7 16-16 16h-20c-4 48-33 88-76 108v25h35c10 0 18 8 18 18s-8 18-18 18H343c-10 0-18-8-18-18s8-18 18-18h36v-25c-43-20-72-60-76-108h-20c-9 0-16-7-16-16s7-16 16-16h14c0-13 3-26 8-38h-14c-9 0-16-7-16-16s7-16 16-16h31c25-36 68-61 121-66v-17c0-7 6-13 13-13h6Z" fill="url(#g1)" fill-opacity=".95"/>
+  <path d="M288 300h324" stroke="#3F2D19" stroke-opacity=".22" stroke-width="10" stroke-linecap="round"/>
+  <path d="M305 300c26 0 48 18 48 40s-22 40-48 40-48-18-48-40 22-40 48-40Zm290 0c26 0 48 18 48 40s-22 40-48 40-48-18-48-40 22-40 48-40Z" fill="#3F2D19" fill-opacity=".18"/>
+  <path d="M306 340l-31 66h62l-31-66Zm289 0-31 66h62l-31-66Z" fill="#3F2D19" fill-opacity=".23"/>
+  <path d="M448 176v190" stroke="#FFF7EA" stroke-opacity=".9" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="448" cy="176" r="18" fill="#FFF7EA"/>
+  <path d="M390 410h116" stroke="#3F2D19" stroke-width="22" stroke-linecap="round"/>
+  <path d="M338 490c28-12 50-25 110-25s82 13 110 25" stroke="#3F2D19" stroke-opacity=".72" stroke-width="24" stroke-linecap="round"/>
+  <path d="M302 536c41 18 99 28 146 28s105-10 146-28" stroke="#C8A15A" stroke-width="18" stroke-linecap="round"/>
+  <text x="450" y="610" text-anchor="middle" fill="#3F2D19" fill-opacity=".85" font-family="Cairo, Arial, sans-serif" font-size="34" font-weight="700">System Overview</text>
+</svg>

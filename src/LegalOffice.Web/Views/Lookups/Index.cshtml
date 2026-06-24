@@ -1,0 +1,81 @@
+@model LegalOffice.Application.ViewModels.LookupTypeIndexVM
+@using LegalOffice.Application.ViewModels
+@{
+    ViewData["Title"] = "الإعدادات";
+    var search = ViewBag.Search as string;
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <div class="eyebrow">القوائم المرجعية</div>
+        <h2 class="mb-1">أنواع الـ Lookups</h2>
+        <div class="text-muted">كل نوع هنا بيتحوّل لشاشة بيانات مستقلة تقدر تضيف وتعدل وتحذف وتفعّل أو تعطل منها.</div>
+    </div>
+    <a class="btn btn-gold" asp-action="CreateType">إضافة نوع</a>
+</div>
+
+<div class="glass-card p-3 p-md-4 mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-10">
+            <input name="search" value="@search" class="form-control" placeholder="ابحث بالكود أو الاسم..." />
+        </div>
+        <div class="col-md-2 d-grid">
+            <button class="btn btn-outline-primary">بحث</button>
+        </div>
+    </form>
+</div>
+
+<div class="table-responsive glass-card p-3 p-md-4">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>الكود</th>
+                <th>الاسم</th>
+                <th>الاسم الإنجليزي</th>
+                <th>الترتيب</th>
+                <th>الحالة</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Types.Items)
+            {
+                <tr>
+                    <td>@item.Code</td>
+                    <td>@item.NameAr</td>
+                    <td>@item.NameEn</td>
+                    <td>@item.SortOrder</td>
+                    <td><span class="badge text-bg-light border">@(item.IsActive ? "نشط" : "غير نشط")</span></td>
+                    <td class="text-nowrap">
+                        <a asp-action="Items" asp-route-lookupTypeId="@item.Id" class="btn btn-sm btn-outline-secondary">العناصر</a>
+                        <a asp-action="EditType" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">تعديل</a>
+                        <form asp-action="ToggleTypeStatus" asp-route-id="@item.Id" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button class="btn btn-sm btn-outline-warning">@(item.IsActive ? "تعطيل" : "تفعيل")</button>
+                        </form>
+                        <form asp-action="DeleteType" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('متأكد من حذف النوع؟');">
+                            @Html.AntiForgeryToken()
+                            <button class="btn btn-sm btn-outline-danger">حذف</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @{
+        var pager = new PaginationVM
+        {
+            ControllerName = "Lookups",
+            ActionName = "Index",
+            Page = Model.Types.Page,
+            TotalPages = Model.Types.TotalPages,
+            RouteValues = new Dictionary<string, object?>
+            {
+                ["search"] = search,
+                ["pageSize"] = Model.Types.PageSize
+            }
+        };
+    }
+    <partial name="_Pagination" model="pager" />
+</div>

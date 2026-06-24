@@ -1,0 +1,24 @@
+@model IReadOnlyList<LegalOffice.Domain.Entities.LookupType>
+@{
+    var currentController = (ViewContext.RouteData.Values["controller"] as string) ?? string.Empty;
+    var currentAction = (ViewContext.RouteData.Values["action"] as string) ?? string.Empty;
+    var currentLookupTypeId = ViewContext.RouteData.Values["lookupTypeId"]?.ToString();
+    var settingsExpanded = string.Equals(currentController, "Lookups", StringComparison.OrdinalIgnoreCase);
+}
+
+<div class="sidebar-group">
+    <button class="sidebar-group-toggle @(settingsExpanded ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#settingsMenu" aria-expanded="@(settingsExpanded ? "true" : "false")" aria-controls="settingsMenu">
+        الإعدادات
+    </button>
+    <div class="collapse @(settingsExpanded ? "show" : "") sidebar-subnav" id="settingsMenu">
+        <a asp-controller="Lookups" asp-action="Index" class="@(string.Equals(currentController, "Lookups", StringComparison.OrdinalIgnoreCase) && string.Equals(currentAction, "Index", StringComparison.OrdinalIgnoreCase) ? "active" : "")">
+            إدارة الأنواع
+        </a>
+        @foreach (var type in Model)
+        {
+            <a asp-controller="Lookups" asp-action="Items" asp-route-lookupTypeId="@type.Id" class="@(string.Equals(currentController, "Lookups", StringComparison.OrdinalIgnoreCase) && string.Equals(currentAction, "Items", StringComparison.OrdinalIgnoreCase) && currentLookupTypeId == type.Id.ToString() ? "active" : "")">
+                @type.NameAr
+            </a>
+        }
+    </div>
+</div>
