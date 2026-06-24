@@ -1,0 +1,38 @@
+@model IEnumerable<LegalOffice.Domain.Entities.MessageTemplate>
+@{
+    ViewData["Title"] = "القوالب";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="h3 mb-1">القوالب</h1>
+        <p class="text-muted mb-0">إدارة قوالب الرسائل المستخدمة في الإشعارات.</p>
+    </div>
+    <a class="btn btn-primary" asp-action="Create">إضافة قالب</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>الاسم</th>
+                <th>القناة</th>
+                <th>نشط</th>
+                <th>إجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Id</td>
+                <td>@item.Name</td>
+                <td>@item.Channel</td>
+                <td>@(item.IsActive ? "نعم" : "لا")</td>
+                <td><a class="btn btn-sm btn-outline-secondary" asp-action="Edit" asp-route-id="@item.Id">تعديل</a></td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

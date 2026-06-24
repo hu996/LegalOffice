@@ -1,13 +1,28 @@
 @model LegalOffice.Application.ViewModels.DashboardVM
+@inject LegalOffice.Web.Services.IPermissionService PermissionService
 @{
     ViewData["Title"] = "لوحة التحكم";
+    var canViewCases = await PermissionService.HasPermissionAsync(User, "Cases.View");
+    var canViewTasks = await PermissionService.HasPermissionAsync(User, "Tasks.View") || await PermissionService.HasPermissionAsync(User, "Tasks.ViewMine");
+    var canViewConsultations = await PermissionService.HasPermissionAsync(User, "Consultations.View");
+    var canViewContracts = await PermissionService.HasPermissionAsync(User, "Contracts.View");
+    var canViewTreasury = await PermissionService.HasPermissionAsync(User, "Treasury.View");
+    var canViewWorkflows = await PermissionService.HasPermissionAsync(User, "Judgments.View")
+        || await PermissionService.HasPermissionAsync(User, "Execution.View")
+        || await PermissionService.HasPermissionAsync(User, "Meetings.View");
 }
 
 <div class="row g-3 mb-4">
-    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">إجمالي القضايا</div><div class="kpi-value">@Model.TotalCases</div></div></div>
-    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">القضايا المفتوحة</div><div class="kpi-value">@Model.OpenCases</div></div></div>
-    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">جلسات اليوم</div><div class="kpi-value">@Model.TodayHearings</div></div></div>
-    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">جلسات الأسبوع</div><div class="kpi-value">@Model.WeekHearings</div></div></div>
+    @if (canViewCases)
+    {
+        <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">إجمالي القضايا</div><div class="kpi-value">@Model.TotalCases</div></div></div>
+        <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">القضايا المفتوحة</div><div class="kpi-value">@Model.OpenCases</div></div></div>
+    }
+    @if (canViewWorkflows)
+    {
+        <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">جلسات اليوم</div><div class="kpi-value">@Model.TodayHearings</div></div></div>
+        <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">جلسات الأسبوع</div><div class="kpi-value">@Model.WeekHearings</div></div></div>
+    }
 </div>
 
 <div class="row g-4">
@@ -17,9 +32,15 @@
                 <h4 class="mb-0">ملخص مالي</h4>
             </div>
             <div class="row g-3">
-                <div class="col-md-4"><div class="p-3 rounded-4 bg-light border"><div class="text-muted small">مدفوع هذا الشهر</div><div class="fs-4 fw-bold">@Model.MonthPayments.ToString("N2")</div></div></div>
-                <div class="col-md-4"><div class="p-3 rounded-4 bg-light border"><div class="text-muted small">المتبقي</div><div class="fs-4 fw-bold">@Model.TotalRemaining.ToString("N2")</div></div></div>
-                <div class="col-md-4"><div class="p-3 rounded-4 bg-light border"><div class="text-muted small">القضايا الخاصة بي</div><div class="fs-4 fw-bold">@Model.MyCases</div></div></div>
+                @if (canViewTreasury)
+                {
+                    <div class="col-md-4"><div class="p-3 rounded-4 bg-light border"><div class="text-muted small">مدفوع هذا الشهر</div><div class="fs-4 fw-bold">@Model.MonthPayments.ToString("N2")</div></div></div>
+                    <div class="col-md-4"><div class="p-3 rounded-4 bg-light border"><div class="text-muted small">المتبقي</div><div class="fs-4 fw-bold">@Model.TotalRemaining.ToString("N2")</div></div></div>
+                }
+                @if (canViewCases)
+                {
+                    <div class="col-md-4"><div class="p-3 rounded-4 bg-light border"><div class="text-muted small">القضايا الخاصة بي</div><div class="fs-4 fw-bold">@Model.MyCases</div></div></div>
+                }
             </div>
         </div>
     </div>

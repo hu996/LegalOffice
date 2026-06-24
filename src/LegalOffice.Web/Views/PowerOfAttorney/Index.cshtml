@@ -1,0 +1,42 @@
+@model IEnumerable<LegalOffice.Domain.Entities.PowerOfAttorney>
+@{
+    ViewData["Title"] = "التوكيلات";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="m-0">التوكيلات</h3>
+    <a asp-action="Create" class="btn btn-primary">إضافة توكيل</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>رقم التوكيل</th>
+                <th>العميل</th>
+                <th>النوع</th>
+                <th>الحالة</th>
+                <th>تاريخ الإصدار</th>
+                <th class="text-end">الإجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.PowerNumber</td>
+                <td>@item.Client?.FullName</td>
+                <td>@item.TypeLookup?.NameAr</td>
+                <td>@item.StatusLookup?.NameAr</td>
+                <td>@item.IssueDate.ToString("yyyy-MM-dd")</td>
+                <td>
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">عرض</a>
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-primary">تعديل</a>
+                    </div>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,71 @@
+@model LegalOffice.Application.ViewModels.LegalTaskEditVM
+@{
+    ViewData["Title"] = "إضافة مهمة";
+}
+
+<h3 class="mb-3">إضافة مهمة</h3>
+<form asp-action="Create" method="post" class="card card-body">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="mb-3">
+        <label asp-for="CaseTypeId" class="form-label"></label>
+        <select asp-for="CaseTypeId" asp-items="Model.CaseTypes" class="form-select" id="taskCaseTypeId">
+            <option value="">-- اختر نوع القضية --</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Title" class="form-label"></label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+    </div>
+    <div class="mb-3">
+        <label asp-for="RelatedCaseId" class="form-label"></label>
+        <select asp-for="RelatedCaseId" asp-items="Model.Cases" class="form-select" id="taskCaseId">
+            <option value="">-- بدون قضية --</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label asp-for="AssignedToUserId" class="form-label"></label>
+        <select asp-for="AssignedToUserId" asp-items="Model.Assignees" class="form-select"></select>
+        <span asp-validation-for="AssignedToUserId" class="text-danger"></span>
+    </div>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label asp-for="DueDate" class="form-label"></label>
+            <input asp-for="DueDate" type="date" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label asp-for="PriorityLookupId" class="form-label"></label>
+            <select asp-for="PriorityLookupId" asp-items="Model.Priorities" class="form-select"></select>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="StatusLookupId" class="form-label"></label>
+            <select asp-for="StatusLookupId" asp-items="Model.Statuses" class="form-select"></select>
+        </div>
+    </div>
+    <div class="mt-3 mb-3">
+        <label asp-for="TaskTypeLookupId" class="form-label"></label>
+        <select asp-for="TaskTypeLookupId" asp-items="Model.Types" class="form-select"></select>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" type="submit">حفظ</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">رجوع</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/case-filter.js" asp-append-version="true"></script>
+    <script>
+        window.initCaseTypeDependentSelect({
+            sourceSelectId: 'taskCaseTypeId',
+            targetSelectId: 'taskCaseId',
+            endpoint: '@Url.Action("EligibleCases", "Cases")',
+            placeholder: 'بدون قضية'
+        });
+    </script>
+}

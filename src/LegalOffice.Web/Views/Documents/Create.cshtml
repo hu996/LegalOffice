@@ -16,10 +16,11 @@
             <select asp-for="DocumentTypeId" asp-items="Model.DocumentTypes" class="form-select"></select>
             <span asp-validation-for="DocumentTypeId" class="text-danger"></span>
         </div>
-        <div class="col-md-8">
-            <label class="form-label">الملف</label>
-            <input asp-for="File" type="file" class="form-control" />
-            <span asp-validation-for="File" class="text-danger"></span>
+        <div class="col-12">
+            <label asp-for="Files" class="form-label"></label>
+            <input asp-for="Files" type="file" class="form-control" multiple accept="image/*,.pdf,.doc,.docx" />
+            <small class="text-muted">يمكنك رفع أكثر من ملف أو صورة في نفس العملية.</small>
+            <span asp-validation-for="Files" class="text-danger"></span>
         </div>
         <div class="col-12">
             <label class="form-label">ملاحظات</label>

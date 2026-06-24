@@ -1,0 +1,12 @@
+@model LegalOffice.Application.ViewModels.LegalConsultationVM
+@{
+    ViewData["Title"] = "تعديل استشارة";
+}
+
+<h3 class="mb-3">تعديل استشارة</h3>
+<form asp-action="Edit" method="post" class="card card-body">
+    @Html.AntiForgeryToken()
+    <input asp-for="Id" type="hidden" />
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <partial name="Create" model="Model" />
+</form>

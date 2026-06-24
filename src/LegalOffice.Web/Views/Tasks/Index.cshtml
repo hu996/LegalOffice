@@ -1,0 +1,99 @@
+@model IEnumerable<LegalOffice.Application.ViewModels.LegalTaskListItemVM>
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "المهام";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="m-0">المهام</h3>
+    <a asp-action="Create" class="btn btn-primary">إضافة مهمة</a>
+</div>
+
+<form method="get" class="card card-body mb-3">
+    <div class="row g-2">
+        <div class="col-md-3">
+            <select name="statusId" class="form-select">
+                <option value="">كل الحالات</option>
+                @foreach (SelectListItem item in (IEnumerable<SelectListItem>)ViewBag.Statuses)
+                {
+                    <option value="@item.Value" selected="@(ViewBag.StatusId?.ToString() == item.Value)">@item.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="priorityId" class="form-select">
+                <option value="">كل الأولويات</option>
+                @foreach (SelectListItem item in (IEnumerable<SelectListItem>)ViewBag.Priorities)
+                {
+                    <option value="@item.Value" selected="@(ViewBag.PriorityId?.ToString() == item.Value)">@item.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select name="assigneeId" class="form-select">
+                <option value="">كل المسندين</option>
+                @foreach (SelectListItem item in (IEnumerable<SelectListItem>)ViewBag.Users)
+                {
+                    <option value="@item.Value" selected="@(ViewBag.AssigneeId as string == item.Value)">@item.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input name="dueDate" type="date" class="form-control" value="@ViewBag.DueDate" />
+        </div>
+        <div class="col-md-6">
+            <select name="caseId" class="form-select">
+                <option value="">كل القضايا</option>
+                @foreach (SelectListItem item in (IEnumerable<SelectListItem>)ViewBag.Cases)
+                {
+                    <option value="@item.Value" selected="@(ViewBag.CaseId?.ToString() == item.Value)">@item.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-6">
+            <button class="btn btn-outline-primary w-100" type="submit">تصفية</button>
+        </div>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>العنوان</th>
+                <th>القضية</th>
+                <th>المسند إليه</th>
+                <th>النوع</th>
+                <th>الأولوية</th>
+                <th>الحالة</th>
+                <th>الاستحقاق</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr class="@(item.CompletedAt.HasValue ? "table-success" : string.Empty)">
+                <td>@item.Title</td>
+                <td>@item.RelatedCaseNumber</td>
+                <td>@item.AssignedToUserName</td>
+                <td>@item.TaskTypeName</td>
+                <td>@item.PriorityName</td>
+                <td>@item.StatusName</td>
+                <td>@item.DueDate.ToString("yyyy-MM-dd")</td>
+                <td class="text-end">
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">تعديل</a>
+                    <form asp-action="Close" asp-route-id="@item.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-sm btn-success" type="submit">إغلاق</button>
+                    </form>
+                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-sm btn-danger" type="submit" onclick="return confirm('متأكد من حذف المهمة؟')">حذف</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

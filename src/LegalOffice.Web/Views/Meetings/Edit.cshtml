@@ -1,0 +1,75 @@
+@model LegalOffice.Application.ViewModels.MeetingVM
+@{
+    ViewData["Title"] = "تعديل اجتماع";
+}
+
+<h1 class="h3 mb-4">تعديل اجتماع</h1>
+
+<form method="post" class="card p-3">
+    <input asp-for="Id" type="hidden" />
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label asp-for="CaseTypeId" class="form-label"></label>
+            <select asp-for="CaseTypeId" asp-items="Model.CaseTypes" class="form-select" id="meetingCaseTypeId">
+                <option value="">-- اختر نوع القضية --</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Subject" class="form-label"></label>
+            <input asp-for="Subject" class="form-control" />
+            <span asp-validation-for="Subject" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="MeetingDate" class="form-label"></label>
+            <input asp-for="MeetingDate" type="datetime-local" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="ClientId" class="form-label"></label>
+            <select asp-for="ClientId" asp-items="Model.Clients" class="form-select">
+                <option value="">-- اختياري --</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="CaseId" class="form-label"></label>
+            <select asp-for="CaseId" asp-items="Model.Cases" class="form-select" id="meetingCaseId">
+                <option value="">-- اختياري --</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="AssignedUserId" class="form-label"></label>
+            <select asp-for="AssignedUserId" asp-items="Model.Users" class="form-select"></select>
+            <span asp-validation-for="AssignedUserId" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="StatusLookupId" class="form-label"></label>
+            <select asp-for="StatusLookupId" asp-items="Model.Statuses" class="form-select"></select>
+            <span asp-validation-for="StatusLookupId" class="text-danger"></span>
+        </div>
+        <div class="col-12">
+            <label asp-for="MeetingResult" class="form-label"></label>
+            <textarea asp-for="MeetingResult" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="col-12">
+            <label asp-for="Notes" class="form-label"></label>
+            <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+        </div>
+    </div>
+    <div class="mt-4">
+        <button class="btn btn-primary">حفظ التعديلات</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">رجوع</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/case-filter.js" asp-append-version="true"></script>
+    <script>
+        window.initCaseTypeDependentSelect({
+            sourceSelectId: 'meetingCaseTypeId',
+            targetSelectId: 'meetingCaseId',
+            endpoint: '@Url.Action("EligibleCases", "Cases")',
+            placeholder: 'اختياري'
+        });
+    </script>
+}

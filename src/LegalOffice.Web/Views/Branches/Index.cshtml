@@ -1,0 +1,54 @@
+@model IEnumerable<LegalOffice.Application.ViewModels.BranchListItemVM>
+@{
+    ViewData["Title"] = "الفروع";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="m-0">الفروع</h3>
+    <a asp-action="Create" class="btn btn-primary">إضافة فرع</a>
+</div>
+
+<form method="get" class="mb-3">
+    <div class="row g-2">
+        <div class="col-md-8">
+            <input name="search" value="@ViewBag.Search" class="form-control" placeholder="بحث بالاسم أو العنوان أو الهاتف" />
+        </div>
+        <div class="col-md-4">
+            <button class="btn btn-outline-primary w-100" type="submit">بحث</button>
+        </div>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>الاسم</th>
+                <th>العنوان</th>
+                <th>الهاتف</th>
+                <th>المدير</th>
+                <th>الحالة</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.NameAr</td>
+                <td>@item.Address</td>
+                <td>@item.Phone</td>
+                <td>@item.ManagerName</td>
+                <td>@(item.IsActive ? "نشط" : "غير نشط")</td>
+                <td class="text-end">
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">تعديل</a>
+                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-sm btn-danger" type="submit" onclick="return confirm('متأكد من حذف الفرع؟')">حذف</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

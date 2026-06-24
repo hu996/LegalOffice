@@ -1,0 +1,39 @@
+@model IEnumerable<LegalOffice.Domain.Entities.Lookup>
+@{
+    ViewData["Title"] = "الأقسام";
+    var lookupType = ViewBag.LookupType as LegalOffice.Domain.Entities.LookupType;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="m-0">الأقسام</h3>
+    @if (lookupType != null)
+    {
+        <a asp-controller="Lookups" asp-action="Create" asp-route-lookupTypeId="@lookupType.Id" class="btn btn-primary">إضافة قسم</a>
+    }
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>الاسم</th>
+                <th>الإنجليزي</th>
+                <th>الحالة</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.NameAr</td>
+                <td>@item.NameEn</td>
+                <td>@(item.IsActive ? "نشط" : "غير نشط")</td>
+                <td class="text-end">
+                    <a asp-controller="Lookups" asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">تعديل</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

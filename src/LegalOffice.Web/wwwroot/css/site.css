@@ -188,6 +188,53 @@ body::before {
     margin-bottom: 18px;
 }
 
+.page-header,
+.section-header,
+.toolbar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.page-actions,
+.section-actions,
+.toolbar-actions,
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+
+.content-surface > .d-flex.justify-content-between.align-items-center.mb-3,
+.content-surface > .d-flex.flex-wrap.align-items-center.justify-content-between.gap-3.mb-4,
+.content-surface > .d-flex.align-items-center.justify-content-between.gap-3.mb-4,
+.content-surface > .page-header,
+.content-surface > .section-header,
+.content-surface > .toolbar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+form.card.card-body > .d-flex.justify-content-between.align-items-center.mb-3,
+form.card.card-body > .d-flex.align-items-center.justify-content-between.mb-3,
+form.card.card-body > .d-flex.justify-content-between.align-items-center.gap-3,
+form.card.card-body > .d-flex.align-items-center.justify-content-between.gap-3 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
 .eyebrow {
     color: var(--primary);
     font-weight: 700;
@@ -313,15 +360,55 @@ body::before {
     color: var(--primary-dark);
 }
 
-.btn-gold {
+.btn-primary,
+.btn-gold,
+.btn-warning {
     background: linear-gradient(135deg, var(--accent), #8f6b33);
     color: #fff;
     border: none;
+    box-shadow: 0 10px 18px rgba(107, 79, 42, 0.12);
 }
 
-.btn-gold:hover {
+.btn-primary:hover,
+.btn-gold:hover,
+.btn-warning:hover {
     color: #fff;
     filter: brightness(0.98);
+}
+
+.btn-outline-primary,
+.btn-outline-warning {
+    color: var(--primary);
+    border-color: rgba(107, 79, 42, 0.28);
+    background: transparent;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-warning:hover {
+    color: #fff;
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-outline-secondary {
+    color: var(--muted);
+    border-color: rgba(107, 79, 42, 0.18);
+}
+
+.btn-outline-secondary:hover {
+    color: #fff;
+    background: var(--muted);
+    border-color: var(--muted);
+}
+
+.btn,
+.form-control,
+.form-select {
+    border-radius: 14px;
+}
+
+.btn-sm {
+    border-radius: 12px;
 }
 
 .table {

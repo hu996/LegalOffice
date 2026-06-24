@@ -13,9 +13,8 @@ public class DocumentCreateEditVM
     [Display(Name = "نوع المستند")]
     public int DocumentTypeId { get; set; }
 
-    [Required(ErrorMessage = "الملف مطلوب.")]
-    [Display(Name = "الملف")]
-    public IFormFile? File { get; set; }
+    [Display(Name = "المرفقات")]
+    public List<IFormFile>? Files { get; set; } = new();
 
     [StringLength(1000, ErrorMessage = "الملاحظات لا يجب أن تزيد عن 1000 حرف.")]
     [Display(Name = "الملاحظات")]

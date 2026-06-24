@@ -54,6 +54,11 @@ public class CaseCreateEditVM
     [Display(Name = "تاريخ البداية")]
     public DateTime StartDate { get; set; } = DateTime.Today;
 
+    [Required(ErrorMessage = "سنة القضية مطلوبة.")]
+    [Range(2000, 2100, ErrorMessage = "سنة القضية غير صحيحة.")]
+    [Display(Name = "سنة القضية")]
+    public int CaseYear { get; set; } = DateTime.Today.Year;
+
     [Display(Name = "أتعاب القضية")]
     [Range(0, double.MaxValue, ErrorMessage = "أتعاب القضية لا يمكن أن تكون سالبة.")]
     public decimal FeesAmount { get; set; }

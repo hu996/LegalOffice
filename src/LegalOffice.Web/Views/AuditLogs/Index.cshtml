@@ -1,0 +1,45 @@
+@model IEnumerable<LegalOffice.Application.ViewModels.AuditLogListItemVM>
+@{
+    ViewData["Title"] = "سجل التدقيق";
+}
+
+<h3 class="mb-3">سجل التدقيق</h3>
+
+<form method="get" class="card card-body mb-3">
+    <div class="row g-2">
+        <div class="col-md-3"><input name="userName" value="@ViewBag.UserName" class="form-control" placeholder="المستخدم" /></div>
+        <div class="col-md-3"><input name="entityName" value="@ViewBag.EntityName" class="form-control" placeholder="الكيان" /></div>
+        <div class="col-md-3"><input name="actionType" value="@ViewBag.ActionType" class="form-control" placeholder="النوع" /></div>
+        <div class="col-md-1"><input name="fromDate" type="date" value="@ViewBag.FromDate" class="form-control" /></div>
+        <div class="col-md-1"><input name="toDate" type="date" value="@ViewBag.ToDate" class="form-control" /></div>
+        <div class="col-md-1"><button class="btn btn-outline-primary w-100" type="submit">بحث</button></div>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>التاريخ</th>
+                <th>المستخدم</th>
+                <th>النوع</th>
+                <th>الكيان</th>
+                <th>المعرف</th>
+                <th>الوصف</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>@item.UserName</td>
+                <td>@item.ActionType</td>
+                <td>@item.EntityName</td>
+                <td>@item.EntityId</td>
+                <td>@item.Description</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

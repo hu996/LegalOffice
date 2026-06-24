@@ -51,8 +51,24 @@ public class LegalCase
     [Display(Name = "أتعاب القضية")]
     public decimal FeesAmount { get; set; }
 
+    public int CaseYear { get; set; }
+
+    public string? CreatedByUserId { get; set; }
+    public ApplicationUser? CreatedByUser { get; set; }
+
     [Display(Name = "عدد المحامين")]
     public int LawyersCount { get; set; } = 1;
+
+    public int? BranchId { get; set; }
+    public Branch? Branch { get; set; }
+
+    public int? DepartmentId { get; set; }
+    public Lookup? Department { get; set; }
+
+    public int? WorkflowStageLookupId { get; set; }
+    public Lookup? WorkflowStageLookup { get; set; }
+
+    public DateTime? LastStageChangedAt { get; set; }
 
     public int PriorityId { get; set; }
     public Lookup Priority { get; set; } = null!;
@@ -65,4 +81,7 @@ public class LegalCase
     public ICollection<CaseTimeline> Timelines { get; set; } = new List<CaseTimeline>();
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();
     public ICollection<Expense> Expenses { get; set; } = new List<Expense>();
+    public ICollection<CaseInternalNote> InternalNotes { get; set; } = new List<CaseInternalNote>();
+    public ICollection<CaseStageHistory> StageHistory { get; set; } = new List<CaseStageHistory>();
+    public ICollection<ConflictCheck> ConflictChecks { get; set; } = new List<ConflictCheck>();
 }

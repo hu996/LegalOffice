@@ -1,5 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><TargetFramework>net8.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+  </PropertyGroup>
   <ItemGroup><ProjectReference Include="..\LegalOffice.Domain\LegalOffice.Domain.csproj" /></ItemGroup>
   <ItemGroup><PackageReference Include="Microsoft.AspNetCore.Mvc.ViewFeatures" Version="2.2.0" /></ItemGroup>
 </Project>

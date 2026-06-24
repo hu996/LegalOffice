@@ -19,15 +19,17 @@ public class CasesController : Controller
     private readonly AppDbContext _db;
     private readonly ICaseTimelineService _timeline;
     private readonly IPermissionService _permissions;
+    private readonly ICaseTypeOptionsService _caseTypeOptions;
 
-    public CasesController(AppDbContext db, ICaseTimelineService timeline, IPermissionService permissions)
+    public CasesController(AppDbContext db, ICaseTimelineService timeline, IPermissionService permissions, ICaseTypeOptionsService caseTypeOptions)
     {
         _db = db;
         _timeline = timeline;
         _permissions = permissions;
+        _caseTypeOptions = caseTypeOptions;
     }
 
-    public async Task<IActionResult> Index(string? search, int? statusId, int page = 1, int pageSize = 10)
+    public async Task<IActionResult> Index(string? search, int? statusId, int? caseTypeId, int page = 1, int pageSize = 10)
     {
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 5, 50);
@@ -47,6 +49,11 @@ public class CasesController : Controller
             query = query.Where(x => x.CaseStatusId == statusId.Value);
         }
 
+        if (caseTypeId.HasValue)
+        {
+            query = query.Where(x => x.CaseTypeId == caseTypeId.Value);
+        }
+
         var totalCount = await query.CountAsync();
         var items = await query
             .OrderByDescending(x => x.Id)
@@ -55,8 +62,10 @@ public class CasesController : Controller
             .ToListAsync();
 
         ViewBag.Statuses = await SelectLookups("CaseStatus");
+        ViewBag.CaseTypes = await SelectLookups("CaseType");
         ViewBag.Search = search;
         ViewBag.StatusId = statusId;
+        ViewBag.CaseTypeId = caseTypeId;
 
         return View(new PagedResult<LegalCase>
         {
@@ -77,6 +86,7 @@ public class CasesController : Controller
 
         ViewBag.Statuses = await SelectLookups("CaseStatus");
         SetCaseSummaryViewBag(item);
+        ViewBag.CanViewFees = await CanCurrentUserViewFeesAsync(item);
         ViewBag.CanManageCaseRelations = await CanCurrentUserManageCaseRelationsAsync(item.Id);
         ViewBag.CanManagePayments = await _permissions.HasPermissionAsync(User, "Payments.Create");
         return View(item);
@@ -87,11 +97,13 @@ public class CasesController : Controller
         var vm = new CaseCreateEditVM
         {
             LawyersCount = 1,
-            PriorityId = await GetDefaultLookupIdAsync("CasePriority", "Medium")
+            PriorityId = await GetDefaultLookupIdAsync("CasePriority", "Medium"),
+            CaseYear = DateTime.Today.Year
         };
 
         InitializeLawyerAssignments(vm);
         await FillLookups(vm);
+        ViewBag.CanViewFees = true;
         return View(vm);
     }
 
@@ -100,11 +112,13 @@ public class CasesController : Controller
     {
         NormalizeAssignments(vm);
         ValidateAssignments(vm);
+        await ValidateCaseLawyerSpecialtiesAsync(vm);
         await ValidateUniqueCaseNumberAsync(vm);
 
         if (!ModelState.IsValid)
         {
             await FillLookups(vm);
+            ViewBag.CanViewFees = true;
             return View(vm);
         }
 
@@ -122,9 +136,12 @@ public class CasesController : Controller
             OpponentLawyer = vm.OpponentLawyer,
             StartDate = vm.StartDate,
             FeesAmount = vm.FeesAmount,
+            CaseYear = vm.CaseYear,
             LawyersCount = vm.LawyerAssignments.Count,
             PriorityId = vm.PriorityId
         };
+
+        entity.CreatedByUserId = CurrentUserId();
 
         foreach (var assignment in vm.LawyerAssignments)
         {
@@ -185,6 +202,7 @@ public class CasesController : Controller
             OpponentLawyer = entity.OpponentLawyer,
             StartDate = entity.StartDate,
             FeesAmount = entity.FeesAmount,
+            CaseYear = entity.CaseYear,
             LawyersCount = Math.Max(entity.CaseLawyers.Count, 1),
             PriorityId = entity.PriorityId,
             LawyerAssignments = entity.CaseLawyers
@@ -198,6 +216,7 @@ public class CasesController : Controller
 
         InitializeLawyerAssignments(vm);
         await FillLookups(vm);
+        ViewBag.CanViewFees = await CanCurrentUserViewFeesForEditAsync(entity);
         return View(vm);
     }
 
@@ -217,11 +236,14 @@ public class CasesController : Controller
 
         NormalizeAssignments(vm);
         ValidateAssignments(vm);
+        await ValidateCaseLawyerSpecialtiesAsync(vm);
         await ValidateUniqueCaseNumberAsync(vm);
 
         if (!ModelState.IsValid)
         {
             await FillLookups(vm);
+            var entityForFees = await _db.Cases.AsNoTracking().FirstOrDefaultAsync(x => x.Id == vm.Id.Value);
+            ViewBag.CanViewFees = entityForFees != null && await CanCurrentUserViewFeesForEditAsync(entityForFees);
             return View(vm);
         }
 
@@ -229,6 +251,12 @@ public class CasesController : Controller
         if (entity == null)
         {
             return NotFound();
+        }
+
+        var canViewFees = await CanCurrentUserViewFeesForEditAsync(entity);
+        if (!canViewFees)
+        {
+            vm.FeesAmount = entity.FeesAmount;
         }
 
         var previousLawyerIds = entity.CaseLawyers.Select(x => x.LawyerId).ToList();
@@ -245,6 +273,7 @@ public class CasesController : Controller
         entity.OpponentLawyer = vm.OpponentLawyer;
         entity.StartDate = vm.StartDate;
         entity.FeesAmount = vm.FeesAmount;
+        entity.CaseYear = vm.CaseYear;
         entity.PriorityId = vm.PriorityId;
         entity.LawyersCount = vm.LawyerAssignments.Count;
 
@@ -322,6 +351,31 @@ public class CasesController : Controller
         return Json(lawyers);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> EligibleCases(int? caseTypeId)
+    {
+        var query = _db.Cases
+            .AsNoTracking()
+            .Include(x => x.Client)
+            .AsQueryable();
+
+        if (caseTypeId.HasValue)
+        {
+            query = query.Where(x => x.CaseTypeId == caseTypeId.Value);
+        }
+
+        var cases = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(x => new
+            {
+                value = x.Id,
+                text = x.CaseNumber + " - " + x.Client.FullName
+            })
+            .ToListAsync();
+
+        return Json(cases);
+    }
+
     private IQueryable<LegalCase> BuildVisibleCasesQuery()
     {
         var query = _db.Cases
@@ -386,9 +440,11 @@ public class CasesController : Controller
         ViewBag.Remaining = Math.Max(item.FeesAmount - paid, 0);
     }
 
+    private string? CurrentUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier);
+
     private int? GetCurrentLawyerId()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var userId = CurrentUserId();
         if (string.IsNullOrWhiteSpace(userId))
         {
             return null;
@@ -415,6 +471,44 @@ public class CasesController : Controller
 
         var manageId = await GetLookupIdAsync("CaseAccessLevel", "Manage");
         return await _db.CaseLawyers.AnyAsync(x => x.CaseId == caseId && x.LawyerId == lawyerId.Value && x.AccessLevelId >= manageId);
+    }
+
+    private async Task<bool> CanCurrentUserViewFeesAsync(LegalCase item)
+    {
+        if (await _permissions.HasPermissionAsync(User, "Treasury.View"))
+        {
+            return true;
+        }
+
+        var userId = CurrentUserId();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return false;
+        }
+
+        if (string.Equals(item.CreatedByUserId, userId, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var departmentCode = await _db.Users
+            .Where(x => x.Id == userId)
+            .Select(x => x.Department != null ? x.Department.NameEn : null)
+            .FirstOrDefaultAsync();
+
+        return string.Equals(departmentCode, "Finance", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task<bool> CanCurrentUserViewFeesForEditAsync(LegalCase item)
+    {
+        if (await CanCurrentUserViewFeesAsync(item))
+        {
+            return true;
+        }
+
+        var userId = CurrentUserId();
+        return !string.IsNullOrWhiteSpace(userId) &&
+               string.Equals(item.CreatedByUserId, userId, StringComparison.OrdinalIgnoreCase);
     }
 
     private void InitializeLawyerAssignments(CaseCreateEditVM vm)
@@ -468,6 +562,11 @@ public class CasesController : Controller
 
     private async Task<List<SelectListItem>> SelectLookups(string type)
     {
+        if (type == "CaseType")
+        {
+            return await _caseTypeOptions.GetVisibleCaseTypesAsync(User);
+        }
+
         return await _db.Lookups
             .Where(x => x.Type == type && x.IsActive)
             .OrderBy(x => x.NameAr)
@@ -503,11 +602,16 @@ public class CasesController : Controller
             return;
         }
 
-        var exists = await _db.Cases.AnyAsync(x => x.CaseNumber == vm.CaseNumber && x.Id != (vm.Id ?? 0));
+        var year = vm.CaseYear;
+        var exists = await _db.Cases.AnyAsync(x =>
+            x.CaseNumber == vm.CaseNumber &&
+            x.CaseTypeId == vm.CaseTypeId &&
+            x.CaseYear == year &&
+            x.Id != (vm.Id ?? 0));
         if (exists)
         {
-            ModelState.AddModelError(nameof(vm.CaseNumber), "رقم القضية موجود بالفعل.");
-            TempData["ToastError"] = "رقم القضية موجود بالفعل.";
+            ModelState.AddModelError(nameof(vm.CaseNumber), "رقم القضية موجود بالفعل لنفس النوع والسنة.");
+            TempData["ToastError"] = "رقم القضية موجود بالفعل لنفس النوع والسنة.";
         }
     }
 
@@ -563,5 +667,38 @@ public class CasesController : Controller
         }
 
         await _db.SaveChangesAsync();
+    }
+
+    private async Task ValidateCaseLawyerSpecialtiesAsync(CaseCreateEditVM vm)
+    {
+        if (vm.CaseTypeId <= 0 || vm.LawyerAssignments.Count == 0)
+        {
+            return;
+        }
+
+        var allowedLawyerIds = await _db.Lawyers
+            .AsNoTracking()
+            .Where(x => x.IsActive && x.Specialties.Any(s => s.CaseTypeId == vm.CaseTypeId))
+            .Select(x => x.Id)
+            .ToListAsync();
+
+        var invalidLawyers = vm.LawyerAssignments
+            .Select(x => x.LawyerId)
+            .Where(x => !allowedLawyerIds.Contains(x))
+            .Distinct()
+            .ToList();
+
+        if (invalidLawyers.Count == 0)
+        {
+            return;
+        }
+
+        var caseTypeName = await _db.Lookups
+            .Where(x => x.Id == vm.CaseTypeId)
+            .Select(x => x.NameAr)
+            .FirstOrDefaultAsync() ?? "نوع القضية";
+
+        ModelState.AddModelError(nameof(vm.LawyerAssignments), $"فيه محامي/محامين غير متخصصين في {caseTypeName}.");
+        TempData["ToastError"] = $"فيه محامي/محامين غير متخصصين في {caseTypeName}.";
     }
 }

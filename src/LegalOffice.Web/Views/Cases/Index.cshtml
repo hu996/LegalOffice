@@ -3,8 +3,10 @@
 @{
     ViewData["Title"] = "القضايا";
     var statuses = ViewBag.Statuses as IEnumerable<SelectListItem> ?? Enumerable.Empty<SelectListItem>();
+    var caseTypes = ViewBag.CaseTypes as IEnumerable<SelectListItem> ?? Enumerable.Empty<SelectListItem>();
     var search = ViewBag.Search as string;
     var statusId = ViewBag.StatusId?.ToString();
+    var caseTypeId = ViewBag.CaseTypeId?.ToString();
 }
 
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
@@ -36,6 +38,22 @@
                     else
                     {
                         <option value="@status.Value">@status.Text</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select name="caseTypeId" class="form-select">
+                <option value="">كل أنواع القضايا</option>
+                @foreach (var type in caseTypes)
+                {
+                    if (type.Value == caseTypeId)
+                    {
+                        <option value="@type.Value" selected>@type.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@type.Value">@type.Text</option>
                     }
                 }
             </select>
@@ -92,6 +110,7 @@
             {
                 ["search"] = search,
                 ["statusId"] = statusId,
+                ["caseTypeId"] = caseTypeId,
                 ["pageSize"] = Model.PageSize
             }
         };

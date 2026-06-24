@@ -1,0 +1,89 @@
+@model LegalOffice.Application.ViewModels.ContractVM
+@{
+    ViewData["Title"] = "تعديل عقد";
+}
+
+<h3 class="mb-3">تعديل عقد</h3>
+<form asp-action="Edit" method="post" class="card card-body">
+    @Html.AntiForgeryToken()
+    <input asp-for="Id" type="hidden" />
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label asp-for="ContractNumber" class="form-label"></label>
+            <input asp-for="ContractNumber" class="form-control" />
+            <span asp-validation-for="ContractNumber" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Title" class="form-label"></label>
+            <input asp-for="Title" class="form-control" />
+            <span asp-validation-for="Title" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="ClientId" class="form-label"></label>
+            <select asp-for="ClientId" asp-items="Model.Clients" class="form-select">
+                <option value="">-- اختر العميل --</option>
+            </select>
+            <span asp-validation-for="ClientId" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="AssignedLawyerId" class="form-label"></label>
+            <select asp-for="AssignedLawyerId" asp-items="Model.Lawyers" class="form-select">
+                <option value="">-- اختر المستشار --</option>
+            </select>
+            <span asp-validation-for="AssignedLawyerId" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="ContractTypeLookupId" class="form-label"></label>
+            <select asp-for="ContractTypeLookupId" asp-items="Model.Types" class="form-select">
+                <option value="">-- اختر نوع العقد --</option>
+            </select>
+            <span asp-validation-for="ContractTypeLookupId" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="StatusLookupId" class="form-label"></label>
+            <select asp-for="StatusLookupId" asp-items="Model.Statuses" class="form-select">
+                <option value="">-- اختر الحالة --</option>
+            </select>
+            <span asp-validation-for="StatusLookupId" class="text-danger small"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="StartDate" class="form-label"></label>
+            <input asp-for="StartDate" type="date" class="form-control" />
+            <span asp-validation-for="StartDate" class="text-danger small"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="EndDate" class="form-label"></label>
+            <input asp-for="EndDate" type="date" class="form-control" />
+            <span asp-validation-for="EndDate" class="text-danger small"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="ContractValue" class="form-label"></label>
+            <input asp-for="ContractValue" type="number" step="0.01" class="form-control" />
+            <span asp-validation-for="ContractValue" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="BranchId" class="form-label"></label>
+            <select asp-for="BranchId" asp-items="Model.Branches" class="form-select">
+                <option value="">-- بدون فرع --</option>
+            </select>
+            <span asp-validation-for="BranchId" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="DepartmentId" class="form-label"></label>
+            <select asp-for="DepartmentId" asp-items="Model.Departments" class="form-select">
+                <option value="">-- بدون قسم --</option>
+            </select>
+            <span asp-validation-for="DepartmentId" class="text-danger small"></span>
+        </div>
+        <div class="col-12">
+            <label asp-for="Notes" class="form-label"></label>
+            <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Notes" class="text-danger small"></span>
+        </div>
+    </div>
+    <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-primary" type="submit">حفظ التعديلات</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">رجوع</a>
+    </div>
+</form>

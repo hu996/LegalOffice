@@ -2,6 +2,7 @@
 @using System.Text.Json
 @{
     ViewData["Title"] = "إضافة قضية";
+    var canViewFees = (bool)(ViewBag.CanViewFees ?? true);
 }
 
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
@@ -56,9 +57,17 @@
             <input asp-for="StartDate" type="date" class="form-control" />
         </div>
         <div class="col-md-4">
-            <label class="form-label">الأتعاب</label>
-            <input asp-for="FeesAmount" type="number" step="0.01" class="form-control" />
+            <label class="form-label">سنة القضية</label>
+            <input asp-for="CaseYear" type="number" min="2000" max="2100" class="form-control" />
+            <span asp-validation-for="CaseYear" class="text-danger"></span>
         </div>
+        @if (canViewFees)
+        {
+            <div class="col-md-4">
+                <label class="form-label">الأتعاب</label>
+                <input asp-for="FeesAmount" type="number" step="0.01" class="form-control" />
+            </div>
+        }
         <div class="col-md-4">
             <label class="form-label">الأولوية</label>
             <select asp-for="PriorityId" asp-items="Model.Priorities" class="form-select"></select>

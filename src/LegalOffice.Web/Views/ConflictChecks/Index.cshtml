@@ -1,0 +1,50 @@
+@model IEnumerable<LegalOffice.Domain.Entities.ConflictCheck>
+@{
+    ViewData["Title"] = "فحص تعارض المصالح";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="m-0">فحص تعارض المصالح</h3>
+    <a asp-action="Create" class="btn btn-primary">فحص جديد</a>
+</div>
+
+<form method="get" class="mb-3">
+    <div class="row g-2">
+        <div class="col-md-10">
+            <input name="search" value="@ViewBag.Search" class="form-control" placeholder="بحث بالاسم أو الرقم القومي أو الهاتف" />
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-outline-primary w-100" type="submit">بحث</button>
+        </div>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>العميل</th>
+                <th>الخصم</th>
+                <th>الرقم القومي</th>
+                <th>الهاتف</th>
+                <th>النتيجة</th>
+                <th>القضية</th>
+                <th>التاريخ</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.ClientName</td>
+                <td>@item.OpponentName</td>
+                <td>@item.NationalId</td>
+                <td>@item.Phone</td>
+                <td>@item.ResultStatusLookup?.NameAr</td>
+                <td>@item.Case?.CaseNumber</td>
+                <td>@item.CreatedAt.ToString("yyyy-MM-dd")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

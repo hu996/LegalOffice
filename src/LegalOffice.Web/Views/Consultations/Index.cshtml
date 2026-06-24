@@ -1,0 +1,54 @@
+@model IEnumerable<LegalOffice.Domain.Entities.LegalConsultation>
+@{
+    ViewData["Title"] = "الاستشارات القانونية";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="m-0">الاستشارات القانونية</h3>
+    <a asp-action="Create" class="btn btn-primary">إضافة استشارة</a>
+</div>
+
+<form method="get" class="mb-3">
+    <div class="row g-2">
+        <div class="col-md-10">
+            <input name="search" value="@ViewBag.Search" class="form-control" placeholder="بحث برقم الاستشارة أو العنوان أو اسم العميل" />
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-outline-primary w-100" type="submit">بحث</button>
+        </div>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>رقم الاستشارة</th>
+                <th>العنوان</th>
+                <th>العميل</th>
+                <th>المستشار</th>
+                <th>النوع</th>
+                <th>الحالة</th>
+                <th>التاريخ</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.ConsultationNumber</td>
+                <td>@item.Title</td>
+                <td>@item.Client?.FullName</td>
+                <td>@item.AssignedLawyer?.FullName</td>
+                <td>@item.ConsultationTypeLookup?.NameAr</td>
+                <td>@item.ConsultationStatusLookup?.NameAr</td>
+                <td>@item.RequestDate.ToString("yyyy-MM-dd")</td>
+                <td class="text-end">
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">تعديل</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

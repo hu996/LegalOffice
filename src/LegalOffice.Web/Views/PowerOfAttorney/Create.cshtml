@@ -1,0 +1,75 @@
+@model LegalOffice.Application.ViewModels.PowerOfAttorneyVM
+@{
+    ViewData["Title"] = "إضافة توكيل";
+}
+
+<h3 class="mb-3">إضافة توكيل</h3>
+<form asp-action="Create" method="post" enctype="multipart/form-data" class="card card-body">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label asp-for="PowerNumber" class="form-label"></label>
+            <input asp-for="PowerNumber" class="form-control" />
+            <span asp-validation-for="PowerNumber" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="ClientId" class="form-label"></label>
+            <select asp-for="ClientId" asp-items="Model.Clients" class="form-select">
+                <option value="">-- اختر العميل --</option>
+            </select>
+            <span asp-validation-for="ClientId" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="TypeLookupId" class="form-label"></label>
+            <select asp-for="TypeLookupId" asp-items="Model.Types" class="form-select">
+                <option value="">-- اختر نوع التوكيل --</option>
+            </select>
+            <span asp-validation-for="TypeLookupId" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="StatusLookupId" class="form-label"></label>
+            <select asp-for="StatusLookupId" asp-items="Model.Statuses" class="form-select">
+                <option value="">-- اختر الحالة --</option>
+            </select>
+            <span asp-validation-for="StatusLookupId" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="CaseId" class="form-label"></label>
+            <select asp-for="CaseId" asp-items="Model.Cases" class="form-select">
+                <option value="">-- بدون قضية --</option>
+            </select>
+            <span asp-validation-for="CaseId" class="text-danger small"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="RegistrationOffice" class="form-label"></label>
+            <input asp-for="RegistrationOffice" class="form-control" />
+            <span asp-validation-for="RegistrationOffice" class="text-danger small"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="IssueDate" class="form-label"></label>
+            <input asp-for="IssueDate" type="date" class="form-control" />
+            <span asp-validation-for="IssueDate" class="text-danger small"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="ExpiryDate" class="form-label"></label>
+            <input asp-for="ExpiryDate" type="date" class="form-control" />
+            <span asp-validation-for="ExpiryDate" class="text-danger small"></span>
+        </div>
+        <div class="col-12">
+            <label asp-for="Notes" class="form-label"></label>
+            <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Notes" class="text-danger small"></span>
+        </div>
+        <div class="col-12">
+            <label asp-for="Attachments" class="form-label"></label>
+            <input asp-for="Attachments" type="file" class="form-control" multiple accept="image/*,.pdf,.doc,.docx" />
+            <small class="text-muted">يمكنك رفع أكثر من ملف أو صورة من جهازك.</small>
+            <span asp-validation-for="Attachments" class="text-danger small d-block"></span>
+        </div>
+    </div>
+    <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-primary" type="submit">حفظ</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">رجوع</a>
+    </div>
+</form>

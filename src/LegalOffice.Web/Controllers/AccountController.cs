@@ -1,6 +1,6 @@
 using LegalOffice.Domain.Entities;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LegalOffice.Web.Controllers;
@@ -26,7 +26,7 @@ public class AccountController : Controller
         var user = await _userManager.FindByEmailAsync(email) ?? await _userManager.FindByNameAsync(email);
         if (user != null && user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow)
         {
-            ViewBag.Error = "الحساب غير نشط حالياً";
+            ViewBag.Error = "الحساب غير نشط حاليًا";
             return View();
         }
 

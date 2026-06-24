@@ -1,0 +1,78 @@
+@model LegalOffice.Application.ViewModels.LegalConsultationVM
+@{
+    ViewData["Title"] = "إضافة استشارة";
+}
+
+<h3 class="mb-3">إضافة استشارة</h3>
+<form asp-action="Create" method="post" class="card card-body">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label asp-for="ConsultationNumber" class="form-label"></label>
+            <input asp-for="ConsultationNumber" class="form-control" />
+            <span asp-validation-for="ConsultationNumber" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Title" class="form-label"></label>
+            <input asp-for="Title" class="form-control" />
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="ClientId" class="form-label"></label>
+            <select asp-for="ClientId" asp-items="Model.Clients" class="form-select"></select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="AssignedLawyerId" class="form-label"></label>
+            <select asp-for="AssignedLawyerId" asp-items="Model.Lawyers" class="form-select"></select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="ConsultationTypeLookupId" class="form-label"></label>
+            <select asp-for="ConsultationTypeLookupId" asp-items="Model.Types" class="form-select"></select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="ConsultationStatusLookupId" class="form-label"></label>
+            <select asp-for="ConsultationStatusLookupId" asp-items="Model.Statuses" class="form-select"></select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="BranchId" class="form-label"></label>
+            <select asp-for="BranchId" asp-items="Model.Branches" class="form-select">
+                <option value="">-- بدون فرع --</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="DepartmentId" class="form-label"></label>
+            <select asp-for="DepartmentId" asp-items="Model.Departments" class="form-select">
+                <option value="">-- بدون قسم --</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="RequestDate" class="form-label"></label>
+            <input asp-for="RequestDate" type="date" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label asp-for="ResponseDate" class="form-label"></label>
+            <input asp-for="ResponseDate" type="date" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label asp-for="ConsultationFees" class="form-label"></label>
+            <input asp-for="ConsultationFees" class="form-control" />
+        </div>
+        <div class="col-12">
+            <label asp-for="Subject" class="form-label"></label>
+            <textarea asp-for="Subject" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="col-12">
+            <label asp-for="LegalOpinion" class="form-label"></label>
+            <textarea asp-for="LegalOpinion" class="form-control" rows="4"></textarea>
+        </div>
+        <div class="col-12">
+            <label asp-for="Notes" class="form-label"></label>
+            <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+        </div>
+    </div>
+    <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-primary" type="submit">حفظ</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">رجوع</a>
+    </div>
+</form>

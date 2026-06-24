@@ -1,0 +1,69 @@
+@model LegalOffice.Application.ViewModels.JudgmentVM
+@{
+    ViewData["Title"] = "إضافة حكم";
+}
+
+<h1 class="h3 mb-4">إضافة حكم</h1>
+
+<form method="post" class="card p-3">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label asp-for="CaseTypeId" class="form-label"></label>
+            <select asp-for="CaseTypeId" asp-items="Model.CaseTypes" class="form-select" id="judgmentCaseTypeId">
+                <option value="">-- اختر نوع القضية --</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="CaseId" class="form-label"></label>
+            <select asp-for="CaseId" asp-items="Model.Cases" class="form-select" id="judgmentCaseId">
+                <option value="">-- اختر القضية --</option>
+            </select>
+            <span asp-validation-for="CaseId" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="CourtLevelLookupId" class="form-label"></label>
+            <select asp-for="CourtLevelLookupId" asp-items="Model.CourtLevels" class="form-select">
+                <option value="">-- اختر الدرجة --</option>
+            </select>
+            <span asp-validation-for="CourtLevelLookupId" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="JudgmentDate" class="form-label"></label>
+            <input asp-for="JudgmentDate" type="date" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <label asp-for="JudgmentAmount" class="form-label"></label>
+            <input asp-for="JudgmentAmount" class="form-control" />
+        </div>
+        <div class="col-12">
+            <label asp-for="JudgmentSummary" class="form-label"></label>
+            <textarea asp-for="JudgmentSummary" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="col-12">
+            <label asp-for="Notes" class="form-label"></label>
+            <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+        </div>
+        <div class="col-12 form-check">
+            <input asp-for="IsFinal" class="form-check-input" />
+            <label asp-for="IsFinal" class="form-check-label"></label>
+        </div>
+    </div>
+    <div class="mt-4">
+        <button class="btn btn-primary">حفظ</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">رجوع</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/case-filter.js" asp-append-version="true"></script>
+    <script>
+        window.initCaseTypeDependentSelect({
+            sourceSelectId: 'judgmentCaseTypeId',
+            targetSelectId: 'judgmentCaseId',
+            endpoint: '@Url.Action("EligibleCases", "Cases")',
+            placeholder: 'اختر القضية'
+        });
+    </script>
+}

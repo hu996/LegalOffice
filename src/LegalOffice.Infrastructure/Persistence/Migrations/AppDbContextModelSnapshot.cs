@@ -30,9 +30,15 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
+                    b.Property<int?>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -45,13 +51,7 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("DepartmentId")
-                        .HasColumnType("int");
-
                     b.Property<int?>("LawyerId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("UserTypeId")
                         .HasColumnType("int");
 
                     b.Property<bool>("LockoutEnabled")
@@ -87,7 +87,14 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<int?>("UserTypeId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("DepartmentId");
 
                     b.HasIndex("LawyerId")
                         .IsUnique()
@@ -101,7 +108,133 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
+                    b.HasIndex("UserTypeId");
+
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EntityId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EntityName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NewValues")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OldValues")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserAgent")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AuditLogs");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.Branch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ManagerUserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ManagerUserId");
+
+                    b.ToTable("Branches");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.CaseAssignmentHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CaseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ChangedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LawyerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId");
+
+                    b.HasIndex("ChangedByUserId");
+
+                    b.HasIndex("LawyerId");
+
+                    b.ToTable("CaseAssignmentHistories");
                 });
 
             modelBuilder.Entity("LegalOffice.Domain.Entities.CaseDocument", b =>
@@ -153,7 +286,8 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("CourtDecision")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -168,10 +302,12 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("NextRequirements")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.HasKey("Id");
 
@@ -180,6 +316,44 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                     b.HasIndex("HearingStatusId");
 
                     b.ToTable("CaseHearings");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.CaseInternalNote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CaseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.ToTable("CaseInternalNotes");
                 });
 
             modelBuilder.Entity("LegalOffice.Domain.Entities.CaseLawyer", b =>
@@ -215,6 +389,46 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("CaseLawyers");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.CaseStageHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CaseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ChangedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("FromStageLookupId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ToStageLookupId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId");
+
+                    b.HasIndex("ChangedByUserId");
+
+                    b.HasIndex("FromStageLookupId");
+
+                    b.HasIndex("ToStageLookupId");
+
+                    b.ToTable("CaseStageHistories");
                 });
 
             modelBuilder.Entity("LegalOffice.Domain.Entities.CaseTimeline", b =>
@@ -258,7 +472,11 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Address")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<string>("ClientType")
                         .IsRequired()
@@ -279,7 +497,8 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Phone")
                         .HasColumnType("nvarchar(max)");
@@ -289,10 +508,204 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("NationalId")
                         .IsUnique();
 
                     b.ToTable("Clients");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.ConflictCheck", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("CaseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CheckedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ClientName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NationalId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("OpponentName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ResultStatusLookupId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId");
+
+                    b.HasIndex("CheckedByUserId");
+
+                    b.HasIndex("ResultStatusLookupId");
+
+                    b.ToTable("ConflictChecks");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.Contract", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AssignedLawyerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ContractNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("ContractTypeLookupId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ContractValue")
+                        .HasColumnType("decimal(18,2)");
+
+                      b.Property<DateTime>("CreatedAt")
+                          .HasColumnType("datetime2");
+
+                      b.Property<int?>("DepartmentId")
+                          .HasColumnType("int");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("StatusLookupId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedLawyerId");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("ContractTypeLookupId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("StatusLookupId");
+
+                    b.ToTable("Contracts");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.ContractVersion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ContractId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContractId");
+
+                    b.ToTable("ContractVersions");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.ExecutionCase", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExecutionNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("ExecutionOfficer")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("ExecutionStatusLookupId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("JudgmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExecutionStatusLookupId");
+
+                    b.HasIndex("JudgmentId");
+
+                    b.ToTable("ExecutionCases");
                 });
 
             modelBuilder.Entity("LegalOffice.Domain.Entities.Expense", b =>
@@ -306,6 +719,12 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApprovedByUserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<int>("CaseId")
                         .HasColumnType("int");
 
@@ -318,13 +737,138 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                     b.Property<string>("Notes")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("StatusLookupId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SubmittedByUserId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("ApprovedByUserId");
 
                     b.HasIndex("CaseId");
 
                     b.HasIndex("ExpenseTypeId");
 
+                    b.HasIndex("StatusLookupId");
+
+                    b.HasIndex("SubmittedByUserId");
+
                     b.ToTable("Expenses");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.FeeAgreement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("CaseId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FeeTypeLookupId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("FeeTypeLookupId");
+
+                    b.ToTable("FeeAgreements");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.FeeInstallment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FeeAgreementId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PaidDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("StatusLookupId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FeeAgreementId");
+
+                    b.HasIndex("StatusLookupId");
+
+                    b.ToTable("FeeInstallments");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.Judgment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CaseId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CourtLevelLookupId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsFinal")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal?>("JudgmentAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("JudgmentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("JudgmentSummary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId");
+
+                    b.HasIndex("CourtLevelLookupId");
+
+                    b.ToTable("Judgments");
                 });
 
             modelBuilder.Entity("LegalOffice.Domain.Entities.Lawyer", b =>
@@ -334,6 +878,12 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(450)");
@@ -346,15 +896,21 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("JobTitle")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Phone")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("DepartmentId");
 
                     b.HasIndex("Email");
 
@@ -393,6 +949,9 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<string>("CaseNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
@@ -404,7 +963,8 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Circuit")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("ClientId")
                         .HasColumnType("int");
@@ -418,35 +978,52 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<decimal>("FeesAmount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("LastStageChangedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("LawyersCount")
                         .HasColumnType("int");
 
                     b.Property<string>("OpponentLawyer")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("OpponentName")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<int>("PriorityId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
+                      b.Property<DateTime>("StartDate")
+                          .HasColumnType("datetime2");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                      b.Property<int>("CaseYear")
+                          .HasColumnType("int");
+
+                      b.Property<string>("Title")
+                          .IsRequired()
+                          .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("WorkflowStageLookupId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CaseNumber")
-                        .IsUnique();
+                    b.HasIndex("BranchId");
+
+                      b.HasIndex("CaseNumber", "CaseTypeId", "CaseYear")
+                          .IsUnique();
 
                     b.HasIndex("CaseStatusId");
 
@@ -456,9 +1033,160 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("CourtId");
 
+                    b.HasIndex("DepartmentId");
+
                     b.HasIndex("PriorityId");
 
+                    b.HasIndex("WorkflowStageLookupId");
+
                     b.ToTable("Cases");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.LegalConsultation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AssignedLawyerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("ConsultationFees")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ConsultationNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ConsultationStatusLookupId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ConsultationTypeLookupId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LegalOpinion")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("RequestDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ResponseDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedLawyerId");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("ConsultationStatusLookupId");
+
+                    b.HasIndex("ConsultationTypeLookupId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.ToTable("LegalConsultations");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.LegalTask", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AssignedToUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PriorityLookupId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RelatedCaseId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StatusLookupId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TaskTypeLookupId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedToUserId");
+
+                    b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("PriorityLookupId");
+
+                    b.HasIndex("RelatedCaseId");
+
+                    b.HasIndex("StatusLookupId");
+
+                    b.HasIndex("TaskTypeLookupId");
+
+                    b.ToTable("LegalTasks");
                 });
 
             modelBuilder.Entity("LegalOffice.Domain.Entities.Lookup", b =>
@@ -532,6 +1260,79 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                     b.ToTable("LookupTypes");
                 });
 
+            modelBuilder.Entity("LegalOffice.Domain.Entities.Meeting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AssignedUserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("CaseId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ClientId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("MeetingDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MeetingResult")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<int>("StatusLookupId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedUserId");
+
+                    b.HasIndex("CaseId");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("StatusLookupId");
+
+                    b.ToTable("Meetings");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.MeetingTask", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("MeetingId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MeetingId");
+
+                    b.HasIndex("TaskId");
+
+                    b.ToTable("MeetingTasks");
+                });
+
             modelBuilder.Entity("LegalOffice.Domain.Entities.MessageLog", b =>
                 {
                     b.Property<int>("Id")
@@ -600,6 +1401,81 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                     b.ToTable("MessageTemplates");
                 });
 
+            modelBuilder.Entity("LegalOffice.Domain.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("CaseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LawyerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TargetUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId");
+
+                    b.HasIndex("LawyerId", "IsRead", "CreatedAt");
+
+                    b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.OfficeTreasury", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("CurrentBalance")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("NameAr")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("OfficeTreasuries");
+                });
+
             modelBuilder.Entity("LegalOffice.Domain.Entities.Payment", b =>
                 {
                     b.Property<int>("Id")
@@ -646,6 +1522,65 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                     b.HasIndex("ReceivedByUserId");
 
                     b.ToTable("Payments");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.PowerOfAttorney", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("CaseId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FilePath")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<DateTime>("IssueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("PowerNumber")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("RegistrationOffice")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("StatusLookupId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TypeLookupId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("StatusLookupId");
+
+                    b.HasIndex("TypeLookupId");
+
+                    b.ToTable("PowerOfAttorneys");
                 });
 
             modelBuilder.Entity("LegalOffice.Domain.Entities.RolePermission", b =>
@@ -728,6 +1663,44 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("SystemPermissions");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.TreasuryTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("CaseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("TransactionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TransactionTypeLookupId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TreasuryId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CaseId");
+
+                    b.HasIndex("TransactionTypeLookupId");
+
+                    b.HasIndex("TreasuryId");
+
+                    b.ToTable("TreasuryTransactions");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -865,9 +1838,9 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("LegalOffice.Domain.Entities.ApplicationUser", b =>
                 {
-                    b.HasOne("LegalOffice.Domain.Entities.Lawyer", "Lawyer")
-                        .WithOne("User")
-                        .HasForeignKey("LegalOffice.Domain.Entities.ApplicationUser", "LawyerId")
+                    b.HasOne("LegalOffice.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("LegalOffice.Domain.Entities.Lookup", "Department")
@@ -875,14 +1848,60 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.NoAction);
 
+                    b.HasOne("LegalOffice.Domain.Entities.Lawyer", "Lawyer")
+                        .WithOne("User")
+                        .HasForeignKey("LegalOffice.Domain.Entities.ApplicationUser", "LawyerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("LegalOffice.Domain.Entities.Lookup", "UserType")
                         .WithMany()
                         .HasForeignKey("UserTypeId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.Navigation("Lawyer");
+                    b.Navigation("Branch");
+
                     b.Navigation("Department");
+
+                    b.Navigation("Lawyer");
+
                     b.Navigation("UserType");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.Branch", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.ApplicationUser", "ManagerUser")
+                        .WithMany()
+                        .HasForeignKey("ManagerUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ManagerUser");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.CaseAssignmentHistory", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.LegalCase", "Case")
+                        .WithMany()
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.ApplicationUser", "ChangedByUser")
+                        .WithMany()
+                        .HasForeignKey("ChangedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lawyer", "Lawyer")
+                        .WithMany()
+                        .HasForeignKey("LawyerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Case");
+
+                    b.Navigation("ChangedByUser");
+
+                    b.Navigation("Lawyer");
                 });
 
             modelBuilder.Entity("LegalOffice.Domain.Entities.CaseDocument", b =>
@@ -923,6 +1942,25 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                     b.Navigation("HearingStatus");
                 });
 
+            modelBuilder.Entity("LegalOffice.Domain.Entities.CaseInternalNote", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.LegalCase", "Case")
+                        .WithMany("InternalNotes")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.ApplicationUser", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Case");
+
+                    b.Navigation("CreatedByUser");
+                });
+
             modelBuilder.Entity("LegalOffice.Domain.Entities.CaseLawyer", b =>
                 {
                     b.HasOne("LegalOffice.Domain.Entities.Lookup", "AccessLevel")
@@ -950,6 +1988,40 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                     b.Navigation("Lawyer");
                 });
 
+            modelBuilder.Entity("LegalOffice.Domain.Entities.CaseStageHistory", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.LegalCase", "Case")
+                        .WithMany("StageHistory")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.ApplicationUser", "ChangedByUser")
+                        .WithMany()
+                        .HasForeignKey("ChangedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "FromStageLookup")
+                        .WithMany()
+                        .HasForeignKey("FromStageLookupId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "ToStageLookup")
+                        .WithMany()
+                        .HasForeignKey("ToStageLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Case");
+
+                    b.Navigation("ChangedByUser");
+
+                    b.Navigation("FromStageLookup");
+
+                    b.Navigation("ToStageLookup");
+                });
+
             modelBuilder.Entity("LegalOffice.Domain.Entities.CaseTimeline", b =>
                 {
                     b.HasOne("LegalOffice.Domain.Entities.LegalCase", "Case")
@@ -961,8 +2033,128 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                     b.Navigation("Case");
                 });
 
+            modelBuilder.Entity("LegalOffice.Domain.Entities.Client", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.ConflictCheck", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.LegalCase", "Case")
+                        .WithMany("ConflictChecks")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LegalOffice.Domain.Entities.ApplicationUser", "CheckedByUser")
+                        .WithMany()
+                        .HasForeignKey("CheckedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "ResultStatusLookup")
+                        .WithMany()
+                        .HasForeignKey("ResultStatusLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Case");
+
+                    b.Navigation("CheckedByUser");
+
+                    b.Navigation("ResultStatusLookup");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.Contract", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.Lawyer", "AssignedLawyer")
+                        .WithMany()
+                        .HasForeignKey("AssignedLawyerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LegalOffice.Domain.Entities.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "ContractTypeLookup")
+                        .WithMany()
+                        .HasForeignKey("ContractTypeLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "StatusLookup")
+                        .WithMany()
+                        .HasForeignKey("StatusLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssignedLawyer");
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("ContractTypeLookup");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("StatusLookup");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.ContractVersion", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.Contract", "Contract")
+                        .WithMany("Versions")
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Contract");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.ExecutionCase", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "ExecutionStatusLookup")
+                        .WithMany()
+                        .HasForeignKey("ExecutionStatusLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Judgment", "Judgment")
+                        .WithMany("ExecutionCases")
+                        .HasForeignKey("JudgmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ExecutionStatusLookup");
+
+                    b.Navigation("Judgment");
+                });
+
             modelBuilder.Entity("LegalOffice.Domain.Entities.Expense", b =>
                 {
+                    b.HasOne("LegalOffice.Domain.Entities.ApplicationUser", "ApprovedByUser")
+                        .WithMany()
+                        .HasForeignKey("ApprovedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("LegalOffice.Domain.Entities.LegalCase", "Case")
                         .WithMany("Expenses")
                         .HasForeignKey("CaseId")
@@ -973,9 +2165,106 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("ExpenseTypeId");
 
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "StatusLookup")
+                        .WithMany()
+                        .HasForeignKey("StatusLookupId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LegalOffice.Domain.Entities.ApplicationUser", "SubmittedByUser")
+                        .WithMany()
+                        .HasForeignKey("SubmittedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ApprovedByUser");
+
                     b.Navigation("Case");
 
                     b.Navigation("ExpenseType");
+
+                    b.Navigation("StatusLookup");
+
+                    b.Navigation("SubmittedByUser");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.FeeAgreement", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.LegalCase", "Case")
+                        .WithMany()
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LegalOffice.Domain.Entities.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "FeeTypeLookup")
+                        .WithMany()
+                        .HasForeignKey("FeeTypeLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Case");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("FeeTypeLookup");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.FeeInstallment", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.FeeAgreement", "FeeAgreement")
+                        .WithMany("Installments")
+                        .HasForeignKey("FeeAgreementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "StatusLookup")
+                        .WithMany()
+                        .HasForeignKey("StatusLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FeeAgreement");
+
+                    b.Navigation("StatusLookup");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.Judgment", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.LegalCase", "Case")
+                        .WithMany()
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "CourtLevelLookup")
+                        .WithMany()
+                        .HasForeignKey("CourtLevelLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Case");
+
+                    b.Navigation("CourtLevelLookup");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.Lawyer", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Department");
                 });
 
             modelBuilder.Entity("LegalOffice.Domain.Entities.LawyerSpecialty", b =>
@@ -999,6 +2288,11 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("LegalOffice.Domain.Entities.LegalCase", b =>
                 {
+                    b.HasOne("LegalOffice.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("LegalOffice.Domain.Entities.Lookup", "CaseStatus")
                         .WithMany()
                         .HasForeignKey("CaseStatusId")
@@ -1022,11 +2316,23 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .HasForeignKey("CourtId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("LegalOffice.Domain.Entities.Lookup", "Priority")
                         .WithMany()
                         .HasForeignKey("PriorityId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "WorkflowStageLookup")
+                        .WithMany()
+                        .HasForeignKey("WorkflowStageLookupId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
 
                     b.Navigation("CaseStatus");
 
@@ -1036,7 +2342,110 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
 
                     b.Navigation("Court");
 
+                    b.Navigation("Department");
+
                     b.Navigation("Priority");
+
+                    b.Navigation("WorkflowStageLookup");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.LegalConsultation", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.Lawyer", "AssignedLawyer")
+                        .WithMany()
+                        .HasForeignKey("AssignedLawyerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LegalOffice.Domain.Entities.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "ConsultationStatusLookup")
+                        .WithMany()
+                        .HasForeignKey("ConsultationStatusLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "ConsultationTypeLookup")
+                        .WithMany()
+                        .HasForeignKey("ConsultationTypeLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("AssignedLawyer");
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("ConsultationStatusLookup");
+
+                    b.Navigation("ConsultationTypeLookup");
+
+                    b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.LegalTask", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.ApplicationUser", "AssignedToUser")
+                        .WithMany()
+                        .HasForeignKey("AssignedToUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.ApplicationUser", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "PriorityLookup")
+                        .WithMany()
+                        .HasForeignKey("PriorityLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.LegalCase", "RelatedCase")
+                        .WithMany()
+                        .HasForeignKey("RelatedCaseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "StatusLookup")
+                        .WithMany()
+                        .HasForeignKey("StatusLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "TaskTypeLookup")
+                        .WithMany()
+                        .HasForeignKey("TaskTypeLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssignedToUser");
+
+                    b.Navigation("CreatedByUser");
+
+                    b.Navigation("PriorityLookup");
+
+                    b.Navigation("RelatedCase");
+
+                    b.Navigation("StatusLookup");
+
+                    b.Navigation("TaskTypeLookup");
                 });
 
             modelBuilder.Entity("LegalOffice.Domain.Entities.Lookup", b =>
@@ -1048,6 +2457,76 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("LookupType");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.Meeting", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.ApplicationUser", "AssignedUser")
+                        .WithMany()
+                        .HasForeignKey("AssignedUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.LegalCase", "Case")
+                        .WithMany()
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LegalOffice.Domain.Entities.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "StatusLookup")
+                        .WithMany()
+                        .HasForeignKey("StatusLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssignedUser");
+
+                    b.Navigation("Case");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("StatusLookup");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.MeetingTask", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.Meeting", "Meeting")
+                        .WithMany("MeetingTasks")
+                        .HasForeignKey("MeetingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.LegalTask", "Task")
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Meeting");
+
+                    b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.Notification", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.LegalCase", "Case")
+                        .WithMany()
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lawyer", "Lawyer")
+                        .WithMany()
+                        .HasForeignKey("LawyerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Case");
+
+                    b.Navigation("Lawyer");
                 });
 
             modelBuilder.Entity("LegalOffice.Domain.Entities.Payment", b =>
@@ -1083,6 +2562,40 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                     b.Navigation("ReceivedByUser");
                 });
 
+            modelBuilder.Entity("LegalOffice.Domain.Entities.PowerOfAttorney", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.LegalCase", "Case")
+                        .WithMany()
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LegalOffice.Domain.Entities.Client", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "StatusLookup")
+                        .WithMany()
+                        .HasForeignKey("StatusLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "TypeLookup")
+                        .WithMany()
+                        .HasForeignKey("TypeLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Case");
+
+                    b.Navigation("Client");
+
+                    b.Navigation("StatusLookup");
+
+                    b.Navigation("TypeLookup");
+                });
+
             modelBuilder.Entity("LegalOffice.Domain.Entities.RolePermission", b =>
                 {
                     b.HasOne("LegalOffice.Domain.Entities.SystemPermission", "SystemPermission")
@@ -1092,6 +2605,32 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("SystemPermission");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.TreasuryTransaction", b =>
+                {
+                    b.HasOne("LegalOffice.Domain.Entities.LegalCase", "Case")
+                        .WithMany()
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LegalOffice.Domain.Entities.Lookup", "TransactionTypeLookup")
+                        .WithMany()
+                        .HasForeignKey("TransactionTypeLookupId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LegalOffice.Domain.Entities.OfficeTreasury", "Treasury")
+                        .WithMany()
+                        .HasForeignKey("TreasuryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Case");
+
+                    b.Navigation("TransactionTypeLookup");
+
+                    b.Navigation("Treasury");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -1150,6 +2689,21 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                     b.Navigation("Cases");
                 });
 
+            modelBuilder.Entity("LegalOffice.Domain.Entities.Contract", b =>
+                {
+                    b.Navigation("Versions");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.FeeAgreement", b =>
+                {
+                    b.Navigation("Installments");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.Judgment", b =>
+                {
+                    b.Navigation("ExecutionCases");
+                });
+
             modelBuilder.Entity("LegalOffice.Domain.Entities.Lawyer", b =>
                 {
                     b.Navigation("CaseLawyers");
@@ -1163,13 +2717,19 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                 {
                     b.Navigation("CaseLawyers");
 
+                    b.Navigation("ConflictChecks");
+
                     b.Navigation("Documents");
 
                     b.Navigation("Expenses");
 
                     b.Navigation("Hearings");
 
+                    b.Navigation("InternalNotes");
+
                     b.Navigation("Payments");
+
+                    b.Navigation("StageHistory");
 
                     b.Navigation("Timelines");
                 });
@@ -1177,6 +2737,11 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("LegalOffice.Domain.Entities.LookupType", b =>
                 {
                     b.Navigation("Lookups");
+                });
+
+            modelBuilder.Entity("LegalOffice.Domain.Entities.Meeting", b =>
+                {
+                    b.Navigation("MeetingTasks");
                 });
 
             modelBuilder.Entity("LegalOffice.Domain.Entities.SystemPermission", b =>

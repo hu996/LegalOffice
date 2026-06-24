@@ -12,6 +12,7 @@ QuestPDF.Settings.License = LicenseType.Community;
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<ICaseTypeOptionsService, CaseTypeOptionsService>();
 builder.Services.AddScoped<PermissionAuthorizationFilter>();
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -21,7 +22,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddControllersWithViews(options =>
 {
     options.Filters.AddService<PermissionAuthorizationFilter>();
-});
+}).AddRazorRuntimeCompilation();
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
     var culture = new CultureInfo("ar-EG");

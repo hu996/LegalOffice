@@ -1,0 +1,51 @@
+@model IEnumerable<LegalOffice.Domain.Entities.Judgment>
+@{
+    ViewData["Title"] = "الأحكام";
+}
+
+<div class="page-header">
+    <div>
+        <h1 class="h3 mb-1">الأحكام</h1>
+        <p class="text-muted mb-0">إدارة الأحكام المرتبطة بالقضايا.</p>
+    </div>
+    <a class="btn btn-primary" asp-action="Create">إضافة حكم</a>
+</div>
+
+<form class="row g-2 mb-3" method="get">
+    <div class="col-md-8">
+        <input name="search" value="@ViewBag.Search" class="form-control" placeholder="ابحث برقم القضية أو درجة المحكمة أو ملخص الحكم" />
+    </div>
+    <div class="col-md-4">
+        <button class="btn btn-outline-primary w-100">بحث</button>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>القضية</th>
+                <th>تاريخ الحكم</th>
+                <th>درجة المحكمة</th>
+                <th>نهائي</th>
+                <th>إجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Id</td>
+                <td>@item.Case?.CaseNumber</td>
+                <td>@item.JudgmentDate.ToString("yyyy/MM/dd")</td>
+                <td>@item.CourtLevelLookup?.NameAr</td>
+                <td>@(item.IsFinal ? "نعم" : "لا")</td>
+                <td>
+                    <a class="btn btn-sm btn-outline-secondary" asp-action="Edit" asp-route-id="@item.Id">تعديل</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

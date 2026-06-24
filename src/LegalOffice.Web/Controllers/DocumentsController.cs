@@ -57,9 +57,10 @@ public class DocumentsController : Controller
             return Forbid();
         }
 
-        if (vm.File == null || vm.File.Length == 0)
+        var files = vm.Files?.Where(x => x is { Length: > 0 }).ToList() ?? new List<IFormFile>();
+        if (files.Count == 0)
         {
-            ModelState.AddModelError(nameof(vm.File), "اختار ملف صالح.");
+            ModelState.AddModelError(nameof(vm.Files), "اختار ملف صالح أو أكثر.");
         }
 
         if (!ModelState.IsValid)
@@ -71,28 +72,65 @@ public class DocumentsController : Controller
         var folder = Path.Combine(_environment.WebRootPath, "uploads", "cases", vm.CaseId.ToString());
         Directory.CreateDirectory(folder);
 
-        var safeFileName = $"{Guid.NewGuid():N}{Path.GetExtension(vm.File!.FileName)}";
-        var physicalPath = Path.Combine(folder, safeFileName);
-        await using (var stream = new FileStream(physicalPath, FileMode.Create))
+        foreach (var file in files)
         {
-            await vm.File.CopyToAsync(stream);
+            var safeFileName = $"{Guid.NewGuid():N}{Path.GetExtension(file.FileName)}";
+            var physicalPath = Path.Combine(folder, safeFileName);
+            await using (var stream = new FileStream(physicalPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var relativePath = Path.Combine("uploads", "cases", vm.CaseId.ToString(), safeFileName).Replace("\\", "/");
+
+            _db.CaseDocuments.Add(new CaseDocument
+            {
+                CaseId = vm.CaseId,
+                DocumentTypeId = vm.DocumentTypeId,
+                FileName = file.FileName,
+                FilePath = relativePath,
+                Notes = vm.Notes,
+                UploadedAt = DateTime.Now
+            });
         }
-
-        var relativePath = Path.Combine("uploads", "cases", vm.CaseId.ToString(), safeFileName).Replace("\\", "/");
-
-        _db.CaseDocuments.Add(new CaseDocument
-        {
-            CaseId = vm.CaseId,
-            DocumentTypeId = vm.DocumentTypeId,
-            FileName = vm.File.FileName,
-            FilePath = relativePath,
-            Notes = vm.Notes,
-            UploadedAt = DateTime.Now
-        });
 
         await _db.SaveChangesAsync();
         TempData["ToastSuccess"] = "تم رفع المستند بنجاح.";
         return RedirectToAction("Details", "Cases", new { id = vm.CaseId });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var doc = await _db.CaseDocuments.FirstOrDefaultAsync(x => x.Id == id);
+        if (doc is null)
+        {
+            return NotFound();
+        }
+
+        if (await IsCaseClosedAsync(doc.CaseId))
+        {
+            TempData["ToastError"] = "لا يمكن حذف مرفقات قضية مغلقة.";
+            return RedirectToAction("Details", "Cases", new { id = doc.CaseId });
+        }
+
+        if (!await CanManageCaseAsync(doc.CaseId))
+        {
+            return Forbid();
+        }
+
+        var physicalPath = Path.Combine(_environment.WebRootPath, doc.FilePath.Replace("/", Path.DirectorySeparatorChar.ToString()));
+        if (System.IO.File.Exists(physicalPath))
+        {
+            System.IO.File.Delete(physicalPath);
+        }
+
+        _db.CaseDocuments.Remove(doc);
+        await _db.SaveChangesAsync();
+
+        TempData["ToastSuccess"] = "تم حذف المستند بنجاح.";
+        return RedirectToAction("Details", "Cases", new { id = doc.CaseId });
     }
 
     private async Task Fill(DocumentCreateEditVM vm)

@@ -18,6 +18,25 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<CaseTimeline> CaseTimelines => Set<CaseTimeline>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<Expense> Expenses => Set<Expense>();
+    public DbSet<Branch> Branches => Set<Branch>();
+    public DbSet<LegalTask> LegalTasks => Set<LegalTask>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<CaseStageHistory> CaseStageHistories => Set<CaseStageHistory>();
+    public DbSet<CaseAssignmentHistory> CaseAssignmentHistories => Set<CaseAssignmentHistory>();
+    public DbSet<ConflictCheck> ConflictChecks => Set<ConflictCheck>();
+    public DbSet<CaseInternalNote> CaseInternalNotes => Set<CaseInternalNote>();
+    public DbSet<LegalConsultation> LegalConsultations => Set<LegalConsultation>();
+    public DbSet<Contract> Contracts => Set<Contract>();
+    public DbSet<ContractVersion> ContractVersions => Set<ContractVersion>();
+    public DbSet<PowerOfAttorney> PowerOfAttorneys => Set<PowerOfAttorney>();
+    public DbSet<Judgment> Judgments => Set<Judgment>();
+    public DbSet<ExecutionCase> ExecutionCases => Set<ExecutionCase>();
+    public DbSet<Meeting> Meetings => Set<Meeting>();
+    public DbSet<MeetingTask> MeetingTasks => Set<MeetingTask>();
+    public DbSet<FeeAgreement> FeeAgreements => Set<FeeAgreement>();
+    public DbSet<FeeInstallment> FeeInstallments => Set<FeeInstallment>();
+    public DbSet<OfficeTreasury> OfficeTreasuries => Set<OfficeTreasury>();
+    public DbSet<TreasuryTransaction> TreasuryTransactions => Set<TreasuryTransaction>();
     public DbSet<LookupType> LookupTypes => Set<LookupType>();
     public DbSet<Lookup> Lookups => Set<Lookup>();
     public DbSet<SystemPermission> SystemPermissions => Set<SystemPermission>();
@@ -32,7 +51,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
         builder.Entity<Lawyer>().HasIndex(x => x.Email).IsUnique(false);
         builder.Entity<Client>().HasIndex(x => x.NationalId).IsUnique();
-        builder.Entity<LegalCase>().HasIndex(x => x.CaseNumber).IsUnique();
+        builder.Entity<LegalCase>().HasIndex(x => new { x.CaseNumber, x.CaseTypeId, x.CaseYear }).IsUnique();
 
         builder.Entity<Lawyer>()
             .HasOne(x => x.User)
@@ -51,6 +70,12 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             .WithMany()
             .HasForeignKey(x => x.DepartmentId)
             .OnDelete(DeleteBehavior.NoAction);
+
+        builder.Entity<ApplicationUser>()
+            .HasOne(x => x.Branch)
+            .WithMany()
+            .HasForeignKey(x => x.BranchId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.Entity<LawyerSpecialty>()
             .HasIndex(x => new { x.LawyerId, x.CaseTypeId })
@@ -114,6 +139,14 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(x => x.Court).WithMany().HasForeignKey(x => x.CourtId).OnDelete(DeleteBehavior.Restrict);
         builder.Entity<LegalCase>()
             .HasOne(x => x.Priority).WithMany().HasForeignKey(x => x.PriorityId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<LegalCase>()
+            .HasOne(x => x.Branch).WithMany().HasForeignKey(x => x.BranchId).OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<LegalCase>()
+            .HasOne(x => x.Department).WithMany().HasForeignKey(x => x.DepartmentId).OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<LegalCase>()
+            .HasOne(x => x.CreatedByUser).WithMany().HasForeignKey(x => x.CreatedByUserId).OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<LegalCase>()
+            .HasOne(x => x.WorkflowStageLookup).WithMany().HasForeignKey(x => x.WorkflowStageLookupId).OnDelete(DeleteBehavior.NoAction);
 
         builder.Entity<CaseLawyer>()
             .HasOne(x => x.Case).WithMany(x => x.CaseLawyers).HasForeignKey(x => x.CaseId).OnDelete(DeleteBehavior.Cascade);
@@ -121,6 +154,11 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             .HasOne(x => x.Lawyer).WithMany(x => x.CaseLawyers).HasForeignKey(x => x.LawyerId).OnDelete(DeleteBehavior.Restrict);
         builder.Entity<CaseLawyer>()
             .HasOne(x => x.AccessLevel).WithMany().HasForeignKey(x => x.AccessLevelId).OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Lawyer>()
+            .HasOne(x => x.Branch).WithMany().HasForeignKey(x => x.BranchId).OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<Lawyer>()
+            .HasOne(x => x.Department).WithMany().HasForeignKey(x => x.DepartmentId).OnDelete(DeleteBehavior.SetNull);
 
         builder.Entity<CaseHearing>()
             .HasOne(x => x.Case).WithMany(x => x.Hearings).HasForeignKey(x => x.CaseId).OnDelete(DeleteBehavior.Cascade);
@@ -147,6 +185,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<Payment>().Property(x => x.Amount).HasColumnType("decimal(18,2)");
         builder.Entity<Expense>().Property(x => x.Amount).HasColumnType("decimal(18,2)");
         builder.Entity<LegalCase>().Property(x => x.FeesAmount).HasColumnType("decimal(18,2)");
+        builder.Entity<OfficeTreasury>().Property(x => x.CurrentBalance).HasColumnType("decimal(18,2)");
+        builder.Entity<TreasuryTransaction>().Property(x => x.Amount).HasColumnType("decimal(18,2)");
 
         builder.Entity<Notification>()
             .HasIndex(x => new { x.LawyerId, x.IsRead, x.CreatedAt });
@@ -162,5 +202,205 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             .WithMany()
             .HasForeignKey(x => x.CaseId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Client>()
+            .HasOne(x => x.Branch)
+            .WithMany()
+            .HasForeignKey(x => x.BranchId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Entity<Expense>()
+            .HasOne(x => x.StatusLookup)
+            .WithMany()
+            .HasForeignKey(x => x.StatusLookupId)
+            .OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<Expense>()
+            .HasOne(x => x.SubmittedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.SubmittedByUserId)
+            .OnDelete(DeleteBehavior.NoAction);
+        builder.Entity<Expense>()
+            .HasOne(x => x.ApprovedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.ApprovedByUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Entity<Branch>()
+            .HasOne(x => x.ManagerUser)
+            .WithMany()
+            .HasForeignKey(x => x.ManagerUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Entity<LegalTask>()
+            .HasOne(x => x.RelatedCase)
+            .WithMany()
+            .HasForeignKey(x => x.RelatedCaseId)
+            .OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<LegalTask>()
+            .HasOne(x => x.AssignedToUser)
+            .WithMany()
+            .HasForeignKey(x => x.AssignedToUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<LegalTask>()
+            .HasOne(x => x.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<LegalTask>()
+            .HasOne(x => x.PriorityLookup)
+            .WithMany()
+            .HasForeignKey(x => x.PriorityLookupId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<LegalTask>()
+            .HasOne(x => x.StatusLookup)
+            .WithMany()
+            .HasForeignKey(x => x.StatusLookupId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<LegalTask>()
+            .HasOne(x => x.TaskTypeLookup)
+            .WithMany()
+            .HasForeignKey(x => x.TaskTypeLookupId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<CaseStageHistory>()
+            .HasOne(x => x.Case)
+            .WithMany(x => x.StageHistory)
+            .HasForeignKey(x => x.CaseId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<CaseStageHistory>()
+            .HasOne(x => x.FromStageLookup)
+            .WithMany()
+            .HasForeignKey(x => x.FromStageLookupId)
+            .OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<CaseStageHistory>()
+            .HasOne(x => x.ToStageLookup)
+            .WithMany()
+            .HasForeignKey(x => x.ToStageLookupId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<CaseStageHistory>()
+            .HasOne(x => x.ChangedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.ChangedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<CaseAssignmentHistory>()
+            .HasOne(x => x.Case)
+            .WithMany()
+            .HasForeignKey(x => x.CaseId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<CaseAssignmentHistory>()
+            .HasOne(x => x.Lawyer)
+            .WithMany()
+            .HasForeignKey(x => x.LawyerId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<CaseAssignmentHistory>()
+            .HasOne(x => x.ChangedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.ChangedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<ConflictCheck>()
+            .HasOne(x => x.Case)
+            .WithMany(x => x.ConflictChecks)
+            .HasForeignKey(x => x.CaseId)
+            .OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<ConflictCheck>()
+            .HasOne(x => x.ResultStatusLookup)
+            .WithMany()
+            .HasForeignKey(x => x.ResultStatusLookupId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<ConflictCheck>()
+            .HasOne(x => x.CheckedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.CheckedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<CaseInternalNote>()
+            .HasOne(x => x.Case)
+            .WithMany(x => x.InternalNotes)
+            .HasForeignKey(x => x.CaseId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<CaseInternalNote>()
+            .HasOne(x => x.CreatedByUser)
+            .WithMany()
+            .HasForeignKey(x => x.CreatedByUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<LegalConsultation>()
+            .HasOne(x => x.Client).WithMany().HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<LegalConsultation>()
+            .HasOne(x => x.AssignedLawyer).WithMany().HasForeignKey(x => x.AssignedLawyerId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<LegalConsultation>()
+            .HasOne(x => x.ConsultationTypeLookup).WithMany().HasForeignKey(x => x.ConsultationTypeLookupId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<LegalConsultation>()
+            .HasOne(x => x.ConsultationStatusLookup).WithMany().HasForeignKey(x => x.ConsultationStatusLookupId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<LegalConsultation>()
+            .HasOne(x => x.Branch).WithMany().HasForeignKey(x => x.BranchId).OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<LegalConsultation>()
+            .HasOne(x => x.Department).WithMany().HasForeignKey(x => x.DepartmentId).OnDelete(DeleteBehavior.SetNull);
+
+        builder.Entity<Contract>()
+            .HasOne(x => x.Client).WithMany().HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<Contract>()
+            .HasOne(x => x.AssignedLawyer).WithMany().HasForeignKey(x => x.AssignedLawyerId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<Contract>()
+            .HasOne(x => x.ContractTypeLookup).WithMany().HasForeignKey(x => x.ContractTypeLookupId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<Contract>()
+            .HasOne(x => x.StatusLookup).WithMany().HasForeignKey(x => x.StatusLookupId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<Contract>()
+            .HasOne(x => x.Branch).WithMany().HasForeignKey(x => x.BranchId).OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<Contract>()
+            .HasOne(x => x.Department).WithMany().HasForeignKey(x => x.DepartmentId).OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<ContractVersion>()
+            .HasOne(x => x.Contract).WithMany(x => x.Versions).HasForeignKey(x => x.ContractId).OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<PowerOfAttorney>()
+            .HasOne(x => x.Client).WithMany().HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<PowerOfAttorney>()
+            .HasOne(x => x.TypeLookup).WithMany().HasForeignKey(x => x.TypeLookupId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<PowerOfAttorney>()
+            .HasOne(x => x.StatusLookup).WithMany().HasForeignKey(x => x.StatusLookupId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<PowerOfAttorney>()
+            .HasOne(x => x.Case).WithMany().HasForeignKey(x => x.CaseId).OnDelete(DeleteBehavior.SetNull);
+
+        builder.Entity<Judgment>()
+            .HasOne(x => x.Case).WithMany().HasForeignKey(x => x.CaseId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<Judgment>()
+            .HasOne(x => x.CourtLevelLookup).WithMany().HasForeignKey(x => x.CourtLevelLookupId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<ExecutionCase>()
+            .HasOne(x => x.Judgment).WithMany(x => x.ExecutionCases).HasForeignKey(x => x.JudgmentId).OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<ExecutionCase>()
+            .HasOne(x => x.ExecutionStatusLookup).WithMany().HasForeignKey(x => x.ExecutionStatusLookupId).OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<Meeting>()
+            .HasOne(x => x.Client).WithMany().HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<Meeting>()
+            .HasOne(x => x.Case).WithMany().HasForeignKey(x => x.CaseId).OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<Meeting>()
+            .HasOne(x => x.AssignedUser).WithMany().HasForeignKey(x => x.AssignedUserId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<Meeting>()
+            .HasOne(x => x.StatusLookup).WithMany().HasForeignKey(x => x.StatusLookupId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<MeetingTask>()
+            .HasOne(x => x.Meeting).WithMany(x => x.MeetingTasks).HasForeignKey(x => x.MeetingId).OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<MeetingTask>()
+            .HasOne(x => x.Task).WithMany().HasForeignKey(x => x.TaskId).OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<FeeAgreement>()
+            .HasOne(x => x.Client).WithMany().HasForeignKey(x => x.ClientId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<FeeAgreement>()
+            .HasOne(x => x.Case).WithMany().HasForeignKey(x => x.CaseId).OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<FeeAgreement>()
+            .HasOne(x => x.FeeTypeLookup).WithMany().HasForeignKey(x => x.FeeTypeLookupId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<FeeInstallment>()
+            .HasOne(x => x.FeeAgreement).WithMany(x => x.Installments).HasForeignKey(x => x.FeeAgreementId).OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<FeeInstallment>()
+            .HasOne(x => x.StatusLookup).WithMany().HasForeignKey(x => x.StatusLookupId).OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<TreasuryTransaction>()
+            .HasOne(x => x.Treasury).WithMany().HasForeignKey(x => x.TreasuryId).OnDelete(DeleteBehavior.Cascade);
+        builder.Entity<TreasuryTransaction>()
+            .HasOne(x => x.TransactionTypeLookup).WithMany().HasForeignKey(x => x.TransactionTypeLookupId).OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<TreasuryTransaction>()
+            .HasOne(x => x.Case).WithMany().HasForeignKey(x => x.CaseId).OnDelete(DeleteBehavior.SetNull);
     }
 }

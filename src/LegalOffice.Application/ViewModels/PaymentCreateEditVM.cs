@@ -13,7 +13,7 @@ public class PaymentCreateEditVM
     public int CaseId { get; set; }
 
     [Required(ErrorMessage = "المبلغ مطلوب.")]
-    [Range(0.01, double.MaxValue, ErrorMessage = "المبلغ يجب أن يكون أكبر من صفر.")]
+    [Range(typeof(decimal), "0", "79228162514264337593543950335", ErrorMessage = "المبلغ يجب أن يكون أكبر من صفر.")]
     [Display(Name = "المبلغ")]
     public decimal Amount { get; set; }
 

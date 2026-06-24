@@ -222,7 +222,7 @@ public class LookupsController : Controller
         model.Type = lookupType.Code;
         if (!ModelState.IsValid)
         {
-            ViewBag.LookupTypeName = lookupType.NameAr;
+            ViewBag.LookupTypeName = lookupType?.NameAr ?? string.Empty;
             return View(model);
         }
 
@@ -244,7 +244,7 @@ public class LookupsController : Controller
         var item = await _db.Lookups.Include(x => x.LookupType).FirstOrDefaultAsync(x => x.Id == id);
         if (item != null)
         {
-            ViewBag.LookupTypeName = item.LookupType.NameAr;
+            ViewBag.LookupTypeName = item.LookupType?.NameAr ?? string.Empty;
         }
         return item == null ? NotFound() : View(item);
     }
@@ -264,7 +264,7 @@ public class LookupsController : Controller
 
         if (!ModelState.IsValid)
         {
-            ViewBag.LookupTypeName = existing.LookupType.NameAr;
+            ViewBag.LookupTypeName = existing.LookupType?.NameAr ?? string.Empty;
             return View(model);
         }
 
@@ -276,7 +276,7 @@ public class LookupsController : Controller
         if (duplicateExists)
         {
             ModelState.AddModelError(nameof(model.NameAr), "القيمة دي موجودة بالفعل داخل نفس النوع.");
-            ViewBag.LookupTypeName = existing.LookupType.NameAr;
+            ViewBag.LookupTypeName = existing.LookupType?.NameAr ?? string.Empty;
             return View(model);
         }
 
@@ -342,11 +342,14 @@ public class LookupsController : Controller
     private async Task<bool> IsLookupInUseAsync(int lookupId)
     {
         return await _db.Cases.AnyAsync(x => x.CaseTypeId == lookupId || x.CaseStatusId == lookupId || x.CourtId == lookupId || x.PriorityId == lookupId)
+            || await _db.Cases.AnyAsync(x => x.DepartmentId == lookupId || x.WorkflowStageLookupId == lookupId)
             || await _db.CaseLawyers.AnyAsync(x => x.AccessLevelId == lookupId)
             || await _db.CaseHearings.AnyAsync(x => x.HearingStatusId == lookupId)
             || await _db.CaseDocuments.AnyAsync(x => x.DocumentTypeId == lookupId)
             || await _db.Payments.AnyAsync(x => x.PaymentStatusId == lookupId || x.PaymentMethodId == lookupId)
+            || await _db.Expenses.AnyAsync(x => x.ExpenseTypeId == lookupId || x.StatusLookupId == lookupId)
             || await _db.LawyerSpecialties.AnyAsync(x => x.CaseTypeId == lookupId)
-            || await _db.Expenses.AnyAsync(x => x.ExpenseTypeId == lookupId);
+            || await _db.Lawyers.AnyAsync(x => x.DepartmentId == lookupId)
+            || await _db.Users.AnyAsync(x => x.DepartmentId == lookupId || x.UserTypeId == lookupId);
     }
 }

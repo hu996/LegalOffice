@@ -39,6 +39,9 @@ public class Client
     [Display(Name = "الملاحظات")]
     public string? Notes { get; set; }
 
+    public int? BranchId { get; set; }
+    public Branch? Branch { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public ICollection<LegalCase> Cases { get; set; } = new List<LegalCase>();
 }

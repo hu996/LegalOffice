@@ -4,6 +4,7 @@
     ViewData["Title"] = $"القضية - {Model.CaseNumber}";
     var totalPaid = (decimal)(ViewBag.TotalPaid ?? 0m);
     var remaining = (decimal)(ViewBag.Remaining ?? 0m);
+    var canViewFees = (bool)(ViewBag.CanViewFees ?? false);
     var canManagePayments = (bool)(ViewBag.CanManagePayments ?? false);
     var canManageCaseRelations = (bool)(ViewBag.CanManageCaseRelations ?? false);
     var isClosed = Model.ClosedDate != null;
@@ -28,9 +29,12 @@
 
 <div class="row g-3 mb-4">
     <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">الحالة</div><div class="kpi-value fs-4">@Model.CaseStatus.NameAr</div></div></div>
-    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">الأتعاب</div><div class="kpi-value fs-4">@Model.FeesAmount.ToString("N2")</div></div></div>
-    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">المدفوع</div><div class="kpi-value fs-4">@totalPaid.ToString("N2")</div></div></div>
-    <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">المتبقي</div><div class="kpi-value fs-4">@remaining.ToString("N2")</div></div></div>
+    @if (canViewFees)
+    {
+        <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">الأتعاب</div><div class="kpi-value fs-4">@Model.FeesAmount.ToString("N2")</div></div></div>
+        <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">المدفوع</div><div class="kpi-value fs-4">@totalPaid.ToString("N2")</div></div></div>
+        <div class="col-md-3"><div class="card-kpi p-3"><div class="kpi-label">المتبقي</div><div class="kpi-value fs-4">@remaining.ToString("N2")</div></div></div>
+    }
 </div>
 
 <div class="row g-4">
@@ -45,6 +49,7 @@
                 <div class="col-md-6"><div class="small text-muted">الدائرة</div><div class="fw-semibold">@Model.Circuit</div></div>
                 <div class="col-md-6"><div class="small text-muted">اسم الخصم</div><div class="fw-semibold">@Model.OpponentName</div></div>
                 <div class="col-md-6"><div class="small text-muted">تاريخ البداية</div><div class="fw-semibold">@Model.StartDate.ToString("yyyy/MM/dd")</div></div>
+                <div class="col-md-6"><div class="small text-muted">سنة القضية</div><div class="fw-semibold">@Model.CaseYear</div></div>
                 <div class="col-12"><div class="small text-muted">الوصف</div><div class="fw-semibold">@Model.Description</div></div>
             </div>
         </div>
@@ -123,6 +128,8 @@
     </div>
 
     <div class="col-lg-5">
+        @if (canViewFees)
+        {
         <div class="glass-card p-4 mb-4">
             <div class="d-flex align-items-center justify-content-between mb-3">
                 <h4 class="mb-0">الدفعات</h4>
@@ -153,6 +160,7 @@
                 </table>
             </div>
         </div>
+        }
 
         <div class="glass-card p-4 mb-4">
             <div class="d-flex align-items-center justify-content-between mb-3">
@@ -170,6 +178,7 @@
                             <th>الملف</th>
                             <th>ملاحظات</th>
                             <th>تاريخ الرفع</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -180,6 +189,16 @@
                                 <td><a href="@Url.Content("~/" + doc.FilePath)" target="_blank">@doc.FileName</a></td>
                                 <td>@doc.Notes</td>
                                 <td>@doc.UploadedAt.ToString("yyyy/MM/dd")</td>
+                                <td class="text-end">
+                                    @if (canManageCaseRelations && !isClosed)
+                                    {
+                                        <form asp-controller="Documents" asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('هل تريد حذف هذا المستند؟');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@doc.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">حذف</button>
+                                        </form>
+                                    }
+                                </td>
                             </tr>
                         }
                     </tbody>

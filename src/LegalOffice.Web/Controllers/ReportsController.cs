@@ -18,11 +18,13 @@ public class ReportsController : Controller
 {
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
+    private readonly ICaseTypeOptionsService _caseTypeOptions;
 
-    public ReportsController(AppDbContext db, IPermissionService permissions)
+    public ReportsController(AppDbContext db, IPermissionService permissions, ICaseTypeOptionsService caseTypeOptions)
     {
         _db = db;
         _permissions = permissions;
+        _caseTypeOptions = caseTypeOptions;
     }
 
     public async Task<IActionResult> Index([FromQuery] ReportFiltersVM filters)
@@ -235,11 +237,7 @@ public class ReportsController : Controller
             .Select(x => new SelectListItem(x.FullName, x.Id.ToString()))
             .ToListAsync();
 
-        filters.CaseTypes = await _db.Lookups.AsNoTracking()
-            .Where(x => x.Type == "CaseType" && x.IsActive)
-            .OrderBy(x => x.NameAr)
-            .Select(x => new SelectListItem(x.NameAr, x.Id.ToString()))
-            .ToListAsync();
+        filters.CaseTypes = await _caseTypeOptions.GetVisibleCaseTypesAsync(User);
 
         filters.CaseStatuses = await _db.Lookups.AsNoTracking()
             .Where(x => x.Type == "CaseStatus" && x.IsActive)

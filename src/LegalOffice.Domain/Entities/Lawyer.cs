@@ -25,6 +25,12 @@ public class Lawyer
     [Display(Name = "نشط")]
     public bool IsActive { get; set; } = true;
 
+    public int? BranchId { get; set; }
+    public Branch? Branch { get; set; }
+
+    public int? DepartmentId { get; set; }
+    public Lookup? Department { get; set; }
+
     public string? UserId { get; set; }
     public ApplicationUser? User { get; set; }
     public ICollection<CaseLawyer> CaseLawyers { get; set; } = new List<CaseLawyer>();
