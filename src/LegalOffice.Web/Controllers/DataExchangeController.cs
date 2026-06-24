@@ -69,7 +69,7 @@ public class DataExchangeController : Controller
 
         var data = await _db.Clients.AsNoTracking().OrderBy(x => x.FullName).ToListAsync();
         using var wb = new XLWorkbook();
-        var ws = wb.Worksheets.Add("العملاء");
+        var ws = wb.Worksheets.Add("الموكلين");
         ws.Cell(1, 1).Value = "الاسم";
         ws.Cell(1, 2).Value = "الرقم القومي";
         ws.Cell(1, 3).Value = "الهاتف";
@@ -86,6 +86,6 @@ public class DataExchangeController : Controller
 
         using var ms = new MemoryStream();
         wb.SaveAs(ms);
-        return File(ms.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Clients.xlsx");
+        return File(ms.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Moakkaleen.xlsx");
     }
 }

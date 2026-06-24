@@ -3,7 +3,8 @@
     var currentController = (ViewContext.RouteData.Values["controller"] as string) ?? string.Empty;
     var currentAction = (ViewContext.RouteData.Values["action"] as string) ?? string.Empty;
     var currentLookupTypeId = ViewContext.RouteData.Values["lookupTypeId"]?.ToString();
-    var settingsExpanded = string.Equals(currentController, "Lookups", StringComparison.OrdinalIgnoreCase);
+    var settingsExpanded = string.Equals(currentController, "Lookups", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(currentController, "Settings", StringComparison.OrdinalIgnoreCase);
 }
 
 <div class="sidebar-group">

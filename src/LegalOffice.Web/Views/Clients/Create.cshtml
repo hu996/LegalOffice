@@ -1,11 +1,11 @@
 @model LegalOffice.Domain.Entities.Client
 @{
-    ViewData["Title"] = "إضافة عميل";
+    ViewData["Title"] = "إضافة موكل";
 }
 
 <div class="glass-card p-4">
-    <h2 class="mb-1">إضافة عميل جديد</h2>
-    <div class="text-muted mb-4">تسجيل بيانات العميل وربطها بالقضايا المستقبلية.</div>
+    <h2 class="mb-1">إضافة موكل جديد</h2>
+    <div class="text-muted mb-4">تسجيل بيانات الموكل وربطها بالقضايا المستقبلية.</div>
 
     <form method="post" class="row g-3">
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -35,7 +35,7 @@
             <span asp-validation-for="NationalId" class="text-danger"></span>
         </div>
         <div class="col-md-4">
-            <label class="form-label">نوع العميل</label>
+            <label class="form-label">نوع الموكل</label>
             <input asp-for="ClientType" class="form-control" value="فرد" />
             <span asp-validation-for="ClientType" class="text-danger"></span>
         </div>

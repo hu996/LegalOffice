@@ -91,6 +91,12 @@ public class TasksController : Controller
             return Forbid();
         }
 
+        if (caseId.HasValue && await IsCaseClosedAsync(caseId.Value))
+        {
+            TempData["ToastError"] = "لا يمكن إضافة مهمة على قضية مغلقة.";
+            return RedirectToAction("Details", "Cases", new { id = caseId.Value });
+        }
+
         var vm = new LegalTaskEditVM
         {
             RelatedCaseId = caseId,
@@ -124,6 +130,13 @@ public class TasksController : Controller
 
         if (!await ValidateCaseTypeMatchAsync(vm.RelatedCaseId, vm.CaseTypeId))
         {
+            await Fill(vm);
+            return View(vm);
+        }
+
+        if (vm.RelatedCaseId.HasValue && await IsCaseClosedAsync(vm.RelatedCaseId.Value))
+        {
+            TempData["ToastError"] = "لا يمكن إضافة مهمة على قضية مغلقة.";
             await Fill(vm);
             return View(vm);
         }
@@ -209,6 +222,13 @@ public class TasksController : Controller
             return View(vm);
         }
 
+        if (vm.RelatedCaseId.HasValue && await IsCaseClosedAsync(vm.RelatedCaseId.Value))
+        {
+            TempData["ToastError"] = "لا يمكن تعديل مهمة مرتبطة بقضية مغلقة.";
+            await Fill(vm);
+            return View(vm);
+        }
+
         var existing = await _db.LegalTasks.AsNoTracking().FirstOrDefaultAsync(x => x.Id == vm.Id.Value && !x.IsDeleted);
         if (existing == null)
         {
@@ -257,6 +277,12 @@ public class TasksController : Controller
             return NotFound();
         }
 
+        if (task.RelatedCaseId.HasValue && await IsCaseClosedAsync(task.RelatedCaseId.Value))
+        {
+            TempData["ToastError"] = "لا يمكن تعديل مهمة مرتبطة بقضية مغلقة.";
+            return RedirectToAction(nameof(Index));
+        }
+
         task.StatusLookupId = statusId;
         task.UpdatedAt = DateTime.Now;
         await _db.SaveChangesAsync();
@@ -280,6 +306,12 @@ public class TasksController : Controller
             return NotFound();
         }
 
+        if (task.RelatedCaseId.HasValue && await IsCaseClosedAsync(task.RelatedCaseId.Value))
+        {
+            TempData["ToastError"] = "لا يمكن إغلاق مهمة مرتبطة بقضية مغلقة.";
+            return RedirectToAction(nameof(Index));
+        }
+
         task.CompletedAt = DateTime.Now;
         task.UpdatedAt = DateTime.Now;
         await _db.SaveChangesAsync();
@@ -300,6 +332,12 @@ public class TasksController : Controller
         if (task == null)
         {
             return NotFound();
+        }
+
+        if (task.RelatedCaseId.HasValue && await IsCaseClosedAsync(task.RelatedCaseId.Value))
+        {
+            TempData["ToastError"] = "لا يمكن حذف مهمة مرتبطة بقضية مغلقة.";
+            return RedirectToAction(nameof(Index));
         }
 
         task.IsDeleted = true;
@@ -453,5 +491,15 @@ public class TasksController : Controller
         }
 
         return matches;
+    }
+
+    private async Task<bool> IsCaseClosedAsync(int caseId)
+    {
+        var closedId = await _db.Lookups
+            .Where(x => x.Type == "CaseStatus" && x.NameEn == "Closed")
+            .Select(x => x.Id)
+            .FirstOrDefaultAsync();
+
+        return closedId > 0 && await _db.Cases.AnyAsync(x => x.Id == caseId && x.CaseStatusId == closedId);
     }
 }

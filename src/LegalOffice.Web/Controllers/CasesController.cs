@@ -116,13 +116,12 @@ public class CasesController : Controller
         NormalizeAssignments(vm);
         ValidateAssignments(vm);
         await ValidateCaseLawyerSpecialtiesAsync(vm);
-        await _workflowStatus.ValidateSequentialTransitionAsync(
-            "CaseStatus",
-            null,
-            vm.CaseStatusId,
-            ModelState,
-            nameof(vm.CaseStatusId),
-            "القضية");
+        var initialStatusId = await _workflowStatus.GetInitialStatusIdAsync("CaseStatus") ?? 0;
+        if (vm.CaseStatusId != initialStatusId)
+        {
+            ModelState.AddModelError(nameof(vm.CaseStatusId), "عند إنشاء القضية يجب اختيار الحالة الجديدة فقط.");
+            TempData["ToastError"] = "عند إنشاء القضية يجب اختيار الحالة الجديدة فقط.";
+        }
         await ValidateUniqueCaseNumberAsync(vm);
 
         if (!ModelState.IsValid)
@@ -263,20 +262,19 @@ public class CasesController : Controller
             return NotFound();
         }
 
-        if (!await _workflowStatus.ValidateSequentialTransitionAsync(
-                "CaseStatus",
-                entity.CaseStatusId,
-                vm.CaseStatusId,
-                ModelState,
-                nameof(vm.CaseStatusId),
-                "القضية"))
+        if (!await IsValidLookupAsync("CaseStatus", vm.CaseStatusId))
         {
-            await FillLookups(vm);
-            ViewBag.CanViewFees = await CanCurrentUserViewFeesForEditAsync(entity);
-            return View(vm);
+            ModelState.AddModelError(nameof(vm.CaseStatusId), "الحالة المختارة غير متاحة.");
         }
 
         var canViewFees = await CanCurrentUserViewFeesForEditAsync(entity);
+        if (!ModelState.IsValid)
+        {
+            await FillLookups(vm);
+            ViewBag.CanViewFees = canViewFees;
+            return View(vm);
+        }
+
         if (!canViewFees)
         {
             vm.FeesAmount = entity.FeesAmount;
@@ -343,15 +341,9 @@ public class CasesController : Controller
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        if (!await _workflowStatus.ValidateSequentialTransitionAsync(
-                "CaseStatus",
-                entity.CaseStatusId,
-                statusId,
-                ModelState,
-                "statusId",
-                "القضية"))
+        if (!await IsValidLookupAsync("CaseStatus", statusId))
         {
-            TempData["ToastError"] = "لا يمكن تخطي تسلسل حالات القضية.";
+            TempData["ToastError"] = "الحالة المختارة غير متاحة.";
             return RedirectToAction(nameof(Details), new { id });
         }
 
@@ -592,10 +584,15 @@ public class CasesController : Controller
         vm.Courts = await SelectLookups("Court");
         vm.AccessLevels = await SelectLookups("CaseAccessLevel");
         vm.Priorities = await SelectLookups("CasePriority");
-        var currentStatusId = vm.Id.HasValue
-            ? await _db.Cases.AsNoTracking().Where(x => x.Id == vm.Id.Value).Select(x => (int?)x.CaseStatusId).FirstOrDefaultAsync()
-            : null;
-        vm.CaseStatuses = await _workflowStatus.GetSequentialOptionsAsync("CaseStatus", currentStatusId);
+        if (vm.Id.HasValue)
+        {
+            vm.CaseStatuses = await SelectLookups("CaseStatus");
+        }
+        else
+        {
+            var initialStatusId = await _workflowStatus.GetInitialStatusIdAsync("CaseStatus");
+            vm.CaseStatuses = await _workflowStatus.GetSequentialOptionsAsync("CaseStatus", initialStatusId);
+        }
     }
 
     private async Task<List<SelectListItem>> SelectLookups(string type)
@@ -631,6 +628,11 @@ public class CasesController : Controller
             .OrderBy(x => x.NameAr)
             .Select(x => x.Id)
             .FirstOrDefaultAsync();
+    }
+
+    private async Task<bool> IsValidLookupAsync(string type, int lookupId)
+    {
+        return await _db.Lookups.AnyAsync(x => x.Id == lookupId && x.Type == type && x.IsActive);
     }
 
     private async Task ValidateUniqueCaseNumberAsync(CaseCreateEditVM vm)

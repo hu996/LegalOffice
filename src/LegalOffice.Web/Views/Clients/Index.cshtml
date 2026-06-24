@@ -1,13 +1,13 @@
 @model LegalOffice.Application.ViewModels.PagedResult<LegalOffice.Domain.Entities.Client>
 @{
-    ViewData["Title"] = "العملاء";
+    ViewData["Title"] = "الموكلين";
     var search = ViewBag.Search as string;
 }
 
 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
     <div>
-        <div class="eyebrow">بيانات العملاء</div>
-        <h2 class="mb-1">العملاء</h2>
+        <div class="eyebrow">بيانات الموكلين</div>
+        <h2 class="mb-1">الموكلين</h2>
         <div class="text-muted">إدارة بيانات العميل وربطها بالقضايا.</div>
     </div>
     <a class="btn btn-gold" asp-action="Create">إضافة عميل</a>

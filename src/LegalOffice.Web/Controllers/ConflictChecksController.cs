@@ -58,6 +58,12 @@ public class ConflictChecksController : Controller
             return Forbid();
         }
 
+        if (caseId.HasValue && await IsCaseClosedAsync(caseId.Value))
+        {
+            TempData["ToastError"] = "لا يمكن إضافة فحص تعارض على قضية مغلقة.";
+            return RedirectToAction("Details", "Cases", new { id = caseId.Value });
+        }
+
         var vm = new ConflictCheckVM
         {
             CaseId = caseId,
@@ -91,6 +97,13 @@ public class ConflictChecksController : Controller
 
         if (!await ValidateCaseTypeMatchAsync(vm.CaseId, vm.CaseTypeId))
         {
+            await Fill(vm);
+            return View(vm);
+        }
+
+        if (vm.CaseId.HasValue && await IsCaseClosedAsync(vm.CaseId.Value))
+        {
+            TempData["ToastError"] = "لا يمكن إضافة فحص تعارض على قضية مغلقة.";
             await Fill(vm);
             return View(vm);
         }
@@ -173,5 +186,15 @@ public class ConflictChecksController : Controller
         var statusCode = matchCount > 0 ? "Possible" : "None";
         var item = await _db.Lookups.FirstOrDefaultAsync(x => x.Type == "ConflictCheckStatus" && x.NameEn == statusCode);
         return item?.Id ?? await _db.Lookups.Where(x => x.Type == "ConflictCheckStatus").Select(x => x.Id).FirstOrDefaultAsync();
+    }
+
+    private async Task<bool> IsCaseClosedAsync(int caseId)
+    {
+        var closedId = await _db.Lookups
+            .Where(x => x.Type == "CaseStatus" && x.NameEn == "Closed")
+            .Select(x => x.Id)
+            .FirstOrDefaultAsync();
+
+        return closedId > 0 && await _db.Cases.AnyAsync(x => x.Id == caseId && x.CaseStatusId == closedId);
     }
 }

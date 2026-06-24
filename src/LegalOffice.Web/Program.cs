@@ -34,21 +34,25 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 
 var app = builder.Build();
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
+var applyDatabaseMigrations = builder.Configuration.GetValue("Database:ApplyMigrationsOnStartup", app.Environment.IsDevelopment());
 
 app.UseRequestLocalization();
 
-using (var scope = app.Services.CreateScope())
+if (applyDatabaseMigrations)
 {
-    try
+    using (var scope = app.Services.CreateScope())
     {
-        var services = scope.ServiceProvider;
-        var db = services.GetRequiredService<AppDbContext>();
-        await db.Database.MigrateAsync();
-        await DbSeeder.SeedAsync(services);
-    }
-    catch (Exception ex)
-    {
-        startupLogger.LogError(ex, "An error occurred during application startup database initialization.");
+        try
+        {
+            var services = scope.ServiceProvider;
+            var db = services.GetRequiredService<AppDbContext>();
+            await db.Database.MigrateAsync();
+            await DbSeeder.SeedAsync(services);
+        }
+        catch (Exception ex)
+        {
+            startupLogger.LogError(ex, "An error occurred during application startup database initialization.");
+        }
     }
 }
 

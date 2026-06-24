@@ -346,15 +346,15 @@ public static class DbSeeder
 
         await EnsurePermissionAsync(db, "Dashboard.View", "لوحة التحكم", "Dashboard", "Index", "الرئيسية", 10, true);
         await EnsurePermissionAsync(db, "Dashboard.ViewAll", "عرض شامل للوحة التحكم", "Dashboard", "ViewAll", "الرئيسية", 11, false);
-        await EnsurePermissionAsync(db, "Cases.View", "القضايا", "Cases", "Index", "العمل", 20, true);
-        await EnsurePermissionAsync(db, "Cases.Create", "إضافة قضية", "Cases", "Create", "العمل", 21, false);
-        await EnsurePermissionAsync(db, "Cases.Edit", "تعديل قضية", "Cases", "Edit", "العمل", 22, false);
-        await EnsurePermissionAsync(db, "Cases.Details", "تفاصيل القضية", "Cases", "Details", "العمل", 23, false);
-        await EnsurePermissionAsync(db, "Cases.ChangeStatus", "تغيير حالة القضية", "Cases", "ChangeStatus", "العمل", 24, false);
-        await EnsurePermissionAsync(db, "Clients.View", "العملاء", "Clients", "Index", "العملاء", 30, true);
-        await EnsurePermissionAsync(db, "Clients.Create", "إضافة عميل", "Clients", "Create", "العملاء", 31, false);
-        await EnsurePermissionAsync(db, "Clients.Edit", "تعديل عميل", "Clients", "Edit", "العملاء", 32, false);
-        await EnsurePermissionAsync(db, "Clients.Details", "تفاصيل عميل", "Clients", "Details", "العملاء", 33, false);
+        await EnsurePermissionAsync(db, "Cases.View", "القضايا", "Cases", "Index", "المكتب", 20, true);
+        await EnsurePermissionAsync(db, "Cases.Create", "إضافة قضية", "Cases", "Create", "المكتب", 21, false);
+        await EnsurePermissionAsync(db, "Cases.Edit", "تعديل قضية", "Cases", "Edit", "المكتب", 22, false);
+        await EnsurePermissionAsync(db, "Cases.Details", "تفاصيل القضية", "Cases", "Details", "المكتب", 23, false);
+        await EnsurePermissionAsync(db, "Cases.ChangeStatus", "تغيير حالة القضية", "Cases", "ChangeStatus", "المكتب", 24, false);
+        await EnsurePermissionAsync(db, "Clients.View", "الموكلين", "Clients", "Index", "الموكلين", 30, true);
+        await EnsurePermissionAsync(db, "Clients.Create", "إضافة موكل", "Clients", "Create", "الموكلين", 31, false);
+        await EnsurePermissionAsync(db, "Clients.Edit", "تعديل موكل", "Clients", "Edit", "الموكلين", 32, false);
+        await EnsurePermissionAsync(db, "Clients.Details", "تفاصيل موكل", "Clients", "Details", "الموكلين", 33, false);
         await EnsurePermissionAsync(db, "Lawyers.View", "المحامون", "Lawyers", "Index", "المحامون", 40, true);
         await EnsurePermissionAsync(db, "Lawyers.Create", "إضافة محامي", "Lawyers", "Create", "المحامون", 41, false);
         await EnsurePermissionAsync(db, "Lawyers.Edit", "تعديل محامي", "Lawyers", "Edit", "المحامون", 42, false);

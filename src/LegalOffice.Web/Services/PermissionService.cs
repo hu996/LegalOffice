@@ -11,6 +11,21 @@ public class PermissionService : IPermissionService
 
     public PermissionService(AppDbContext db) => _db = db;
 
+    private static string NormalizeMenuGroup(string? value)
+        => string.Equals(value, "العمل", StringComparison.OrdinalIgnoreCase) ? "المكتب" :
+           string.IsNullOrWhiteSpace(value) ? "عام" : value!;
+
+    private static string NormalizeMenuLabel(string? controller, string? label)
+    {
+        if (string.Equals(controller, "Clients", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(label, "العملاء", StringComparison.OrdinalIgnoreCase))
+        {
+            return "الموكلين";
+        }
+
+        return label ?? string.Empty;
+    }
+
     public async Task<bool> HasPermissionAsync(ClaimsPrincipal user, string permissionCode)
     {
         if (user.Identity?.IsAuthenticated != true)
@@ -73,13 +88,13 @@ public class PermissionService : IPermissionService
                 .ToListAsync();
 
             return allItems
-                .GroupBy(x => string.IsNullOrWhiteSpace(x.MenuGroup) ? "عام" : x.MenuGroup!)
+                .GroupBy(x => NormalizeMenuGroup(x.MenuGroup))
                 .Select(group => new SidebarMenuGroupVM
                 {
                     Title = group.Key,
                     Items = group.Select(x => new SidebarMenuItemVM
                     {
-                        Label = x.NameAr,
+                        Label = NormalizeMenuLabel(x.Controller, x.NameAr),
                         Controller = x.Controller,
                         Action = x.Action,
                         PermissionCode = x.Code
@@ -108,13 +123,13 @@ public class PermissionService : IPermissionService
             .ToListAsync();
 
         return items
-            .GroupBy(x => string.IsNullOrWhiteSpace(x.MenuGroup) ? "عام" : x.MenuGroup!)
+            .GroupBy(x => NormalizeMenuGroup(x.MenuGroup))
             .Select(group => new SidebarMenuGroupVM
             {
                 Title = group.Key,
                 Items = group.Select(x => new SidebarMenuItemVM
                 {
-                    Label = x.NameAr,
+                    Label = NormalizeMenuLabel(x.Controller, x.NameAr),
                     Controller = x.Controller,
                     Action = x.Action,
                     PermissionCode = x.Code

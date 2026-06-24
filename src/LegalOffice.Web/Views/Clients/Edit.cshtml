@@ -1,11 +1,11 @@
 @model LegalOffice.Domain.Entities.Client
 @{
-    ViewData["Title"] = "تعديل عميل";
+    ViewData["Title"] = "تعديل موكل";
 }
 
 <div class="glass-card p-4">
-    <h2 class="mb-1">تعديل بيانات العميل</h2>
-    <div class="text-muted mb-4">تحديث بيانات العميل المستخدمة في القضايا والرسائل.</div>
+    <h2 class="mb-1">تعديل بيانات الموكل</h2>
+    <div class="text-muted mb-4">تحديث بيانات الموكل المستخدمة في القضايا والرسائل.</div>
 
     <form method="post" class="row g-3">
         <input asp-for="Id" type="hidden" />
@@ -36,7 +36,7 @@
             <span asp-validation-for="NationalId" class="text-danger"></span>
         </div>
         <div class="col-md-4">
-            <label class="form-label">نوع العميل</label>
+            <label class="form-label">نوع الموكل</label>
             <input asp-for="ClientType" class="form-control" />
             <span asp-validation-for="ClientType" class="text-danger"></span>
         </div>

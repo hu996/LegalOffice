@@ -19,11 +19,14 @@
     else
     {
         var groupId = "group_" + Math.Abs(group.Title.GetHashCode());
+        var groupExpanded = group.Items.Any(item =>
+            string.Equals(currentController, item.Controller, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(currentAction, item.Action, StringComparison.OrdinalIgnoreCase));
         <div class="sidebar-group">
-            <button class="sidebar-group-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#@groupId" aria-expanded="false">
+            <button class="sidebar-group-toggle @(groupExpanded ? "" : "collapsed")" type="button" data-bs-toggle="collapse" data-bs-target="#@groupId" aria-expanded="@(groupExpanded ? "true" : "false")" aria-controls="@groupId">
                 @group.Title
             </button>
-            <div class="collapse sidebar-subnav" id="@groupId">
+            <div class="collapse @(groupExpanded ? "show" : "") sidebar-subnav" id="@groupId">
                 @foreach (var item in group.Items)
                 {
                     var active = string.Equals(currentController, item.Controller, StringComparison.OrdinalIgnoreCase)
