@@ -224,7 +224,7 @@ public static class DbSeeder
                 || x.Code == "Hearings.Edit"
                 || x.Code == "Documents.Create"
                 || x.Code == "Notifications.View"
-                || x.Code == "Notifications.Open")
+                || x.Code == "Notifications.Open") 
             .Select(x => x.Id)
             .ToListAsync());
         await GrantRolePermissionsAsync(db, "Lawyer", await db.SystemPermissions
