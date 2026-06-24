@@ -48,9 +48,15 @@
                 <td>@item.UserTypeName</td>
                 <td>@item.DepartmentName</td>
                 <td>@item.LawyerName</td>
-                <td><span class="badge @(item.IsActive ? "text-bg-success" : "text-bg-secondary")">@(item.IsActive ? "نشط" : "غير نشط")</span></td>
+                <td class="text-nowrap">
+                    <span class="badge @(item.IsActive ? "text-bg-success" : "text-bg-secondary")">@(item.IsActive ? "نشط" : "غير نشط")</span>
+                </td>
                 <td class="text-nowrap">
                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">تعديل</a>
+                    <form asp-action="ResetPassword" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('هل تريد إعادة تعيين كلمة المرور لهذا المستخدم؟');">
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-sm btn-outline-warning">إعادة تعيين الباسورد</button>
+                    </form>
                     <form asp-action="ToggleStatus" asp-route-id="@item.Id" method="post" class="d-inline">
                         @Html.AntiForgeryToken()
                         <button class="btn btn-sm btn-outline-secondary">@((item.IsActive) ? "تعطيل" : "تفعيل")</button>

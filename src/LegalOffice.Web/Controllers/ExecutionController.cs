@@ -15,12 +15,14 @@ public class ExecutionController : Controller
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
     private readonly ICaseTypeOptionsService _caseTypeOptions;
+    private readonly IWorkflowStatusService _workflowStatus;
 
-    public ExecutionController(AppDbContext db, IPermissionService permissions, ICaseTypeOptionsService caseTypeOptions)
+    public ExecutionController(AppDbContext db, IPermissionService permissions, ICaseTypeOptionsService caseTypeOptions, IWorkflowStatusService workflowStatus)
     {
         _db = db;
         _permissions = permissions;
         _caseTypeOptions = caseTypeOptions;
+        _workflowStatus = workflowStatus;
     }
 
     public async Task<IActionResult> Index(string? search)
@@ -55,7 +57,7 @@ public class ExecutionController : Controller
             return Forbid();
         }
 
-        var vm = new ExecutionCaseVM { StartDate = DateTime.Today };
+        var vm = new ExecutionCaseVM { StartDate = DateTime.Today, ExecutionStatusLookupId = await _workflowStatus.GetInitialStatusIdAsync("ExecutionStatus") ?? 0 };
         await Fill(vm);
         return View(vm);
     }
@@ -70,6 +72,12 @@ public class ExecutionController : Controller
         }
 
         if (!ModelState.IsValid)
+        {
+            await Fill(vm);
+            return View(vm);
+        }
+
+        if (!await _workflowStatus.ValidateSequentialTransitionAsync("ExecutionStatus", null, vm.ExecutionStatusLookupId, ModelState, nameof(vm.ExecutionStatusLookupId), "التنفيذ"))
         {
             await Fill(vm);
             return View(vm);
@@ -153,6 +161,18 @@ public class ExecutionController : Controller
             return View(vm);
         }
 
+        var existing = await _db.ExecutionCases.AsNoTracking().FirstOrDefaultAsync(x => x.Id == vm.Id.Value);
+        if (existing == null)
+        {
+            return NotFound();
+        }
+
+        if (!await _workflowStatus.ValidateSequentialTransitionAsync("ExecutionStatus", existing.ExecutionStatusLookupId, vm.ExecutionStatusLookupId, ModelState, nameof(vm.ExecutionStatusLookupId), "التنفيذ"))
+        {
+            await Fill(vm);
+            return View(vm);
+        }
+
         var entity = await _db.ExecutionCases.FirstOrDefaultAsync(x => x.Id == vm.Id.Value);
         if (entity == null)
         {
@@ -175,8 +195,10 @@ public class ExecutionController : Controller
     {
         vm.CaseTypes = await _caseTypeOptions.GetVisibleCaseTypesAsync(User);
         vm.Judgments = await BuildJudgmentsAsync(vm.CaseTypeId);
-        vm.Statuses = await _db.Lookups.Where(x => x.Type == "ExecutionStatus" && x.IsActive).OrderBy(x => x.NameAr)
-            .Select(x => new SelectListItem(x.NameAr, x.Id.ToString())).ToListAsync();
+        var currentStatusId = vm.Id.HasValue
+            ? await _db.ExecutionCases.AsNoTracking().Where(x => x.Id == vm.Id.Value).Select(x => (int?)x.ExecutionStatusLookupId).FirstOrDefaultAsync()
+            : null;
+        vm.Statuses = await _workflowStatus.GetSequentialOptionsAsync("ExecutionStatus", currentStatusId);
     }
 
     private async Task<List<SelectListItem>> BuildJudgmentsAsync(int? caseTypeId)

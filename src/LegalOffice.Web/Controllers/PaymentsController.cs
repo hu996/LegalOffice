@@ -1,6 +1,7 @@
 using LegalOffice.Application.ViewModels;
 using LegalOffice.Domain.Entities;
 using LegalOffice.Infrastructure.Persistence;
+using LegalOffice.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -13,10 +14,12 @@ namespace LegalOffice.Web.Controllers;
 public class PaymentsController : Controller
 {
     private readonly AppDbContext _db;
+    private readonly IWorkflowStatusService _workflowStatus;
 
-    public PaymentsController(AppDbContext db)
+    public PaymentsController(AppDbContext db, IWorkflowStatusService workflowStatus)
     {
         _db = db;
+        _workflowStatus = workflowStatus;
     }
 
     public async Task<IActionResult> Create(int caseId)
@@ -27,7 +30,7 @@ public class PaymentsController : Controller
             return RedirectToAction("Details", "Cases", new { id = caseId });
         }
 
-        var vm = new PaymentCreateEditVM { CaseId = caseId, PaymentDate = DateTime.Today };
+        var vm = new PaymentCreateEditVM { CaseId = caseId, PaymentDate = DateTime.Today, PaymentStatusId = await _workflowStatus.GetInitialStatusIdAsync("PaymentStatus") ?? 0 };
         await Fill(vm);
         return View(vm);
     }
@@ -43,6 +46,12 @@ public class PaymentsController : Controller
         }
 
         if (!ModelState.IsValid)
+        {
+            await Fill(vm);
+            return View(vm);
+        }
+
+        if (!await _workflowStatus.ValidateSequentialTransitionAsync("PaymentStatus", null, vm.PaymentStatusId, ModelState, nameof(vm.PaymentStatusId), "الدفعة"))
         {
             await Fill(vm);
             return View(vm);
@@ -67,7 +76,7 @@ public class PaymentsController : Controller
 
     private async Task Fill(PaymentCreateEditVM vm)
     {
-        vm.PaymentStatuses = await SelectLookups("PaymentStatus");
+        vm.PaymentStatuses = await _workflowStatus.GetSequentialOptionsAsync("PaymentStatus", null);
         vm.PaymentMethods = await SelectLookups("PaymentMethod");
     }
 

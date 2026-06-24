@@ -1,4 +1,5 @@
 using LegalOffice.Domain.Entities;
+using LegalOffice.Application.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -36,6 +37,10 @@ public class AccountController : Controller
             if (result.Succeeded)
             {
                 await _signIn.SignInAsync(user, isPersistent: false);
+                if (user.MustChangePassword)
+                {
+                    return RedirectToAction(nameof(ChangePassword), new { forced = true });
+                }
                 return RedirectToAction("Index", "Dashboard");
             }
         }
@@ -44,11 +49,83 @@ public class AccountController : Controller
         return View();
     }
 
-    [AllowAnonymous]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
         await _signIn.SignOutAsync();
         return RedirectToAction("Login");
+    }
+
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> ChangePassword(bool forced = false)
+    {
+        if (!forced)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            forced = user?.MustChangePassword == true;
+        }
+
+        return View(new ChangePasswordVM { IsForced = forced });
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(ChangePasswordVM vm)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(vm);
+        }
+
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null)
+        {
+            return Challenge();
+        }
+
+        if (user.MustChangePassword)
+        {
+            vm.IsForced = true;
+        }
+
+        if (!vm.IsForced && string.IsNullOrWhiteSpace(vm.CurrentPassword))
+        {
+            ModelState.AddModelError(nameof(vm.CurrentPassword), "كلمة المرور الحالية مطلوبة.");
+            return View(vm);
+        }
+
+        IdentityResult result;
+        if (vm.IsForced)
+        {
+            user.PasswordHash = _userManager.PasswordHasher.HashPassword(user, vm.NewPassword);
+            user.MustChangePassword = false;
+            result = await _userManager.UpdateAsync(user);
+            if (result.Succeeded)
+            {
+                await _userManager.UpdateSecurityStampAsync(user);
+            }
+        }
+        else
+        {
+            result = await _userManager.ChangePasswordAsync(user, vm.CurrentPassword, vm.NewPassword);
+        }
+
+        if (!result.Succeeded)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            return View(vm);
+        }
+
+        await _signIn.RefreshSignInAsync(user);
+        TempData["ToastSuccess"] = "تم تغيير كلمة المرور بنجاح.";
+        return RedirectToAction("Index", "Dashboard");
     }
 
     public IActionResult AccessDenied() => View();

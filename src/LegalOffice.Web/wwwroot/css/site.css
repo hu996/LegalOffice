@@ -270,6 +270,42 @@ form.card.card-body > .d-flex.align-items-center.justify-content-between.gap-3 {
     background: linear-gradient(135deg, var(--accent), var(--primary));
 }
 
+.topbar .dropdown-menu {
+    min-width: 240px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--panel-strong);
+    color: var(--text);
+    box-shadow: var(--shadow);
+}
+
+.topbar .dropdown-menu .dropdown-header {
+    padding: 1rem 1rem 0.75rem;
+    color: var(--text);
+}
+
+.topbar .dropdown-menu .dropdown-header .fw-semibold {
+    color: var(--primary-dark);
+}
+
+.topbar .dropdown-menu .dropdown-header .small {
+    color: var(--muted) !important;
+    word-break: break-word;
+}
+
+.topbar .dropdown-menu .dropdown-item {
+    color: var(--text);
+}
+
+.topbar .dropdown-menu .dropdown-item.text-danger {
+    color: #b42318 !important;
+}
+
+.topbar .dropdown-menu .dropdown-item:active {
+    background: rgba(107, 79, 42, 0.12);
+    color: var(--primary-dark);
+}
+
 .notification-dropdown {
     position: relative;
 }

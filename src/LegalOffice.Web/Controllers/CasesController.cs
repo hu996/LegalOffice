@@ -20,13 +20,15 @@ public class CasesController : Controller
     private readonly ICaseTimelineService _timeline;
     private readonly IPermissionService _permissions;
     private readonly ICaseTypeOptionsService _caseTypeOptions;
+    private readonly IWorkflowStatusService _workflowStatus;
 
-    public CasesController(AppDbContext db, ICaseTimelineService timeline, IPermissionService permissions, ICaseTypeOptionsService caseTypeOptions)
+    public CasesController(AppDbContext db, ICaseTimelineService timeline, IPermissionService permissions, ICaseTypeOptionsService caseTypeOptions, IWorkflowStatusService workflowStatus)
     {
         _db = db;
         _timeline = timeline;
         _permissions = permissions;
         _caseTypeOptions = caseTypeOptions;
+        _workflowStatus = workflowStatus;
     }
 
     public async Task<IActionResult> Index(string? search, int? statusId, int? caseTypeId, int page = 1, int pageSize = 10)
@@ -98,7 +100,8 @@ public class CasesController : Controller
         {
             LawyersCount = 1,
             PriorityId = await GetDefaultLookupIdAsync("CasePriority", "Medium"),
-            CaseYear = DateTime.Today.Year
+            CaseYear = DateTime.Today.Year,
+            CaseStatusId = await _workflowStatus.GetInitialStatusIdAsync("CaseStatus") ?? 0
         };
 
         InitializeLawyerAssignments(vm);
@@ -113,6 +116,13 @@ public class CasesController : Controller
         NormalizeAssignments(vm);
         ValidateAssignments(vm);
         await ValidateCaseLawyerSpecialtiesAsync(vm);
+        await _workflowStatus.ValidateSequentialTransitionAsync(
+            "CaseStatus",
+            null,
+            vm.CaseStatusId,
+            ModelState,
+            nameof(vm.CaseStatusId),
+            "القضية");
         await ValidateUniqueCaseNumberAsync(vm);
 
         if (!ModelState.IsValid)
@@ -253,6 +263,19 @@ public class CasesController : Controller
             return NotFound();
         }
 
+        if (!await _workflowStatus.ValidateSequentialTransitionAsync(
+                "CaseStatus",
+                entity.CaseStatusId,
+                vm.CaseStatusId,
+                ModelState,
+                nameof(vm.CaseStatusId),
+                "القضية"))
+        {
+            await FillLookups(vm);
+            ViewBag.CanViewFees = await CanCurrentUserViewFeesForEditAsync(entity);
+            return View(vm);
+        }
+
         var canViewFees = await CanCurrentUserViewFeesForEditAsync(entity);
         if (!canViewFees)
         {
@@ -317,6 +340,18 @@ public class CasesController : Controller
         if (await IsClosedCaseAsync(id))
         {
             TempData["ToastError"] = "لا يمكن تغيير حالة قضية مغلقة.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        if (!await _workflowStatus.ValidateSequentialTransitionAsync(
+                "CaseStatus",
+                entity.CaseStatusId,
+                statusId,
+                ModelState,
+                "statusId",
+                "القضية"))
+        {
+            TempData["ToastError"] = "لا يمكن تخطي تسلسل حالات القضية.";
             return RedirectToAction(nameof(Details), new { id });
         }
 
@@ -554,10 +589,13 @@ public class CasesController : Controller
             .ToListAsync();
 
         vm.CaseTypes = await SelectLookups("CaseType");
-        vm.CaseStatuses = await SelectLookups("CaseStatus");
         vm.Courts = await SelectLookups("Court");
         vm.AccessLevels = await SelectLookups("CaseAccessLevel");
         vm.Priorities = await SelectLookups("CasePriority");
+        var currentStatusId = vm.Id.HasValue
+            ? await _db.Cases.AsNoTracking().Where(x => x.Id == vm.Id.Value).Select(x => (int?)x.CaseStatusId).FirstOrDefaultAsync()
+            : null;
+        vm.CaseStatuses = await _workflowStatus.GetSequentialOptionsAsync("CaseStatus", currentStatusId);
     }
 
     private async Task<List<SelectListItem>> SelectLookups(string type)

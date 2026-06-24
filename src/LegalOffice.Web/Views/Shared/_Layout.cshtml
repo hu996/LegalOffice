@@ -62,7 +62,6 @@
 
             <div class="sidebar-footer">
                 <div class="text-white-50 small">مرحبًا، @User.Identity?.Name</div>
-                <a asp-controller="Account" asp-action="Logout" class="btn btn-gold btn-sm mt-2 w-100">خروج</a>
             </div>
         </aside>
 
@@ -74,6 +73,29 @@
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     @await Component.InvokeAsync("NotificationsBell")
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            @((User.Identity?.Name ?? "الحساب"))
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow">
+                            <li>
+                                <div class="dropdown-header text-wrap">
+                                    <div class="fw-semibold">@((User.Identity?.Name ?? "الحساب"))</div>
+                                    <div class="small text-muted">@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</div>
+                                </div>
+                            </li>
+                            <li><hr class="dropdown-divider" /></li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">تغيير كلمة المرور</a>
+                            </li>
+                            <li>
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="dropdown-item text-danger">خروج</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
                     <div class="topbar-badge">
                         <span class="dot"></span>
                         نظام متابعة القضايا

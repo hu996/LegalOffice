@@ -16,12 +16,14 @@ public class PowerOfAttorneyController : Controller
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
     private readonly IWebHostEnvironment _environment;
+    private readonly IWorkflowStatusService _workflowStatus;
 
-    public PowerOfAttorneyController(AppDbContext db, IPermissionService permissions, IWebHostEnvironment environment)
+    public PowerOfAttorneyController(AppDbContext db, IPermissionService permissions, IWebHostEnvironment environment, IWorkflowStatusService workflowStatus)
     {
         _db = db;
         _permissions = permissions;
         _environment = environment;
+        _workflowStatus = workflowStatus;
     }
 
     public async Task<IActionResult> Index(string? search)
@@ -102,7 +104,7 @@ public class PowerOfAttorneyController : Controller
             return Forbid();
         }
 
-        var vm = new PowerOfAttorneyVM { IssueDate = DateTime.Today };
+        var vm = new PowerOfAttorneyVM { IssueDate = DateTime.Today, StatusLookupId = await _workflowStatus.GetInitialStatusIdAsync("PowerStatus") ?? 0 };
         await Fill(vm);
         return View(vm);
     }
@@ -117,6 +119,12 @@ public class PowerOfAttorneyController : Controller
         }
 
         if (!ModelState.IsValid)
+        {
+            await Fill(vm);
+            return View(vm);
+        }
+
+        if (!await _workflowStatus.ValidateSequentialTransitionAsync("PowerStatus", null, vm.StatusLookupId!.Value, ModelState, nameof(vm.StatusLookupId), "التوكيل"))
         {
             await Fill(vm);
             return View(vm);
@@ -164,6 +172,13 @@ public class PowerOfAttorneyController : Controller
         }
 
         if (!ModelState.IsValid)
+        {
+            ViewBag.ExistingAttachments = GetAttachmentPaths(item.FilePath);
+            await Fill(vm);
+            return View(vm);
+        }
+
+        if (!await _workflowStatus.ValidateSequentialTransitionAsync("PowerStatus", item.StatusLookupId, vm.StatusLookupId!.Value, ModelState, nameof(vm.StatusLookupId), "التوكيل"))
         {
             ViewBag.ExistingAttachments = GetAttachmentPaths(item.FilePath);
             await Fill(vm);
@@ -219,7 +234,10 @@ public class PowerOfAttorneyController : Controller
     {
         vm.Clients = await _db.Clients.OrderBy(x => x.FullName).Select(x => new SelectListItem(x.FullName, x.Id.ToString())).ToListAsync();
         vm.Types = await SelectLookups("PowerType");
-        vm.Statuses = await SelectLookups("PowerStatus");
+        var currentStatusId = vm.Id.HasValue
+            ? await _db.PowerOfAttorneys.AsNoTracking().Where(x => x.Id == vm.Id.Value).Select(x => (int?)x.StatusLookupId).FirstOrDefaultAsync()
+            : null;
+        vm.Statuses = await _workflowStatus.GetSequentialOptionsAsync("PowerStatus", currentStatusId);
         vm.Cases = await _db.Cases.OrderByDescending(x => x.Id).Select(x => new SelectListItem($"{x.CaseNumber} - {x.Title}", x.Id.ToString())).ToListAsync();
     }
 

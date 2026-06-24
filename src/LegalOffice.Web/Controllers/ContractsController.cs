@@ -14,11 +14,13 @@ public class ContractsController : Controller
 {
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
+    private readonly IWorkflowStatusService _workflowStatus;
 
-    public ContractsController(AppDbContext db, IPermissionService permissions)
+    public ContractsController(AppDbContext db, IPermissionService permissions, IWorkflowStatusService workflowStatus)
     {
         _db = db;
         _permissions = permissions;
+        _workflowStatus = workflowStatus;
     }
 
     public async Task<IActionResult> Index(string? search)
@@ -53,7 +55,11 @@ public class ContractsController : Controller
             return Forbid();
         }
 
-        var vm = new ContractVM { StartDate = DateTime.Today };
+        var vm = new ContractVM
+        {
+            StartDate = DateTime.Today,
+            StatusLookupId = await _workflowStatus.GetInitialStatusIdAsync("ContractStatus") ?? 0
+        };
         await Fill(vm);
         return View(vm);
     }
@@ -68,6 +74,12 @@ public class ContractsController : Controller
         }
 
         if (!ModelState.IsValid)
+        {
+            await Fill(vm);
+            return View(vm);
+        }
+
+        if (!await _workflowStatus.ValidateSequentialTransitionAsync("ContractStatus", null, vm.StatusLookupId!.Value, ModelState, nameof(vm.StatusLookupId), "العقد"))
         {
             await Fill(vm);
             return View(vm);
@@ -148,6 +160,18 @@ public class ContractsController : Controller
             return View(vm);
         }
 
+        var existing = await _db.Contracts.AsNoTracking().FirstOrDefaultAsync(x => x.Id == vm.Id.Value);
+        if (existing == null)
+        {
+            return NotFound();
+        }
+
+        if (!await _workflowStatus.ValidateSequentialTransitionAsync("ContractStatus", existing.StatusLookupId, vm.StatusLookupId!.Value, ModelState, nameof(vm.StatusLookupId), "العقد"))
+        {
+            await Fill(vm);
+            return View(vm);
+        }
+
         var entity = await _db.Contracts.FirstOrDefaultAsync(x => x.Id == vm.Id.Value);
         if (entity == null)
         {
@@ -177,7 +201,10 @@ public class ContractsController : Controller
         vm.Clients = await _db.Clients.OrderBy(x => x.FullName).Select(x => new SelectListItem(x.FullName, x.Id.ToString())).ToListAsync();
         vm.Lawyers = await _db.Lawyers.OrderBy(x => x.FullName).Select(x => new SelectListItem(x.FullName, x.Id.ToString())).ToListAsync();
         vm.Types = await SelectLookups("ContractType");
-        vm.Statuses = await SelectLookups("ContractStatus");
+        var currentStatusId = vm.Id.HasValue
+            ? await _db.Contracts.AsNoTracking().Where(x => x.Id == vm.Id.Value).Select(x => (int?)x.StatusLookupId).FirstOrDefaultAsync()
+            : null;
+        vm.Statuses = await _workflowStatus.GetSequentialOptionsAsync("ContractStatus", currentStatusId);
         vm.Branches = await _db.Branches.OrderBy(x => x.NameAr).Select(x => new SelectListItem(x.NameAr, x.Id.ToString())).ToListAsync();
         vm.Departments = await _db.Lookups.Where(x => x.Type == "Department" && x.IsActive).OrderBy(x => x.NameAr).Select(x => new SelectListItem(x.NameAr, x.Id.ToString())).ToListAsync();
     }

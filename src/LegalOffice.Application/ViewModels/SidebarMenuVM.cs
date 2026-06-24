@@ -52,6 +52,7 @@ public class ReportSummaryVM
     public decimal TotalFees { get; set; }
     public decimal TotalPaid { get; set; }
     public decimal TotalRemaining { get; set; }
+    public List<ReportCaseRowVM> Cases { get; set; } = new();
     public List<ReportCountRowVM> ByCourt { get; set; } = new();
     public List<ReportCountRowVM> ByType { get; set; } = new();
     public List<ReportCountRowVM> ByStatus { get; set; } = new();
@@ -70,6 +71,7 @@ public class ReportLawyerVM
 {
     public ReportFiltersVM Filters { get; set; } = new();
     public List<ReportLawyerRowVM> Rows { get; set; } = new();
+    public List<ReportCaseRowVM> Cases { get; set; } = new();
     public int TotalCases { get; set; }
 }
 
@@ -90,7 +92,23 @@ public class ReportStatusRowVM
 public class ReportDistributionVM
 {
     public ReportFiltersVM Filters { get; set; } = new();
+    public List<ReportCaseRowVM> Cases { get; set; } = new();
     public List<ReportTypeRowVM> ByType { get; set; } = new();
     public List<ReportStatusRowVM> ByStatus { get; set; } = new();
     public List<ReportCountRowVM> ByCourt { get; set; } = new();
+}
+
+public class ReportCaseRowVM
+{
+    public int Id { get; set; }
+    public string CaseNumber { get; set; } = string.Empty;
+    public int CaseYear { get; set; }
+    public string CaseType { get; set; } = string.Empty;
+    public string Court { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string Lawyers { get; set; } = string.Empty;
+    public DateTime StartDate { get; set; }
+    public decimal FeesAmount { get; set; }
+    public decimal TotalPaid { get; set; }
+    public decimal Remaining => Math.Max(FeesAmount - TotalPaid, 0);
 }

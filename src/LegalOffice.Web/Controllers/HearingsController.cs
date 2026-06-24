@@ -17,12 +17,14 @@ public class HearingsController : Controller
     private readonly AppDbContext _db;
     private readonly ICaseTimelineService _timeline;
     private readonly IPermissionService _permissions;
+    private readonly IWorkflowStatusService _workflowStatus;
 
-    public HearingsController(AppDbContext db, ICaseTimelineService timeline, IPermissionService permissions)
+    public HearingsController(AppDbContext db, ICaseTimelineService timeline, IPermissionService permissions, IWorkflowStatusService workflowStatus)
     {
         _db = db;
         _timeline = timeline;
         _permissions = permissions;
+        _workflowStatus = workflowStatus;
     }
 
     public async Task<IActionResult> Create(int caseId)
@@ -38,7 +40,7 @@ public class HearingsController : Controller
             return Forbid();
         }
 
-        var vm = new HearingCreateEditVM { CaseId = caseId };
+        var vm = new HearingCreateEditVM { CaseId = caseId, HearingStatusId = await _workflowStatus.GetInitialStatusIdAsync("HearingStatus") ?? 0 };
         await Fill(vm);
         return View(vm);
     }
@@ -59,6 +61,12 @@ public class HearingsController : Controller
         }
 
         if (!ModelState.IsValid)
+        {
+            await Fill(vm);
+            return View(vm);
+        }
+
+        if (!await _workflowStatus.ValidateSequentialTransitionAsync("HearingStatus", null, vm.HearingStatusId, ModelState, nameof(vm.HearingStatusId), "الجلسة"))
         {
             await Fill(vm);
             return View(vm);
@@ -143,6 +151,18 @@ public class HearingsController : Controller
             return View(vm);
         }
 
+        var existing = await _db.CaseHearings.AsNoTracking().FirstOrDefaultAsync(x => x.Id == vm.Id.Value);
+        if (existing == null)
+        {
+            return NotFound();
+        }
+
+        if (!await _workflowStatus.ValidateSequentialTransitionAsync("HearingStatus", existing.HearingStatusId, vm.HearingStatusId, ModelState, nameof(vm.HearingStatusId), "الجلسة"))
+        {
+            await Fill(vm);
+            return View(vm);
+        }
+
         var hearing = await _db.CaseHearings.FindAsync(vm.Id.Value);
         if (hearing == null)
         {
@@ -164,11 +184,10 @@ public class HearingsController : Controller
 
     private async Task Fill(HearingCreateEditVM vm)
     {
-        vm.HearingStatuses = await _db.Lookups
-            .Where(x => x.Type == "HearingStatus" && x.IsActive)
-            .OrderBy(x => x.NameAr)
-            .Select(x => new SelectListItem(x.NameAr, x.Id.ToString()))
-            .ToListAsync();
+        var currentStatusId = vm.Id.HasValue
+            ? await _db.CaseHearings.AsNoTracking().Where(x => x.Id == vm.Id.Value).Select(x => (int?)x.HearingStatusId).FirstOrDefaultAsync()
+            : null;
+        vm.HearingStatuses = await _workflowStatus.GetSequentialOptionsAsync("HearingStatus", currentStatusId);
     }
 
     private async Task<bool> CanManageCaseAsync(int caseId)

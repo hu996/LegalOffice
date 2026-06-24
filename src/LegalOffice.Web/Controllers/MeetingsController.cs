@@ -15,12 +15,14 @@ public class MeetingsController : Controller
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
     private readonly ICaseTypeOptionsService _caseTypeOptions;
+    private readonly IWorkflowStatusService _workflowStatus;
 
-    public MeetingsController(AppDbContext db, IPermissionService permissions, ICaseTypeOptionsService caseTypeOptions)
+    public MeetingsController(AppDbContext db, IPermissionService permissions, ICaseTypeOptionsService caseTypeOptions, IWorkflowStatusService workflowStatus)
     {
         _db = db;
         _permissions = permissions;
         _caseTypeOptions = caseTypeOptions;
+        _workflowStatus = workflowStatus;
     }
 
     public async Task<IActionResult> Index(string? search)
@@ -58,7 +60,7 @@ public class MeetingsController : Controller
             return Forbid();
         }
 
-        var vm = new MeetingVM { MeetingDate = DateTime.Now };
+        var vm = new MeetingVM { MeetingDate = DateTime.Now, StatusLookupId = await _workflowStatus.GetInitialStatusIdAsync("MeetingStatus") ?? 0 };
         await Fill(vm);
         return View(vm);
     }
@@ -73,6 +75,12 @@ public class MeetingsController : Controller
         }
 
         if (!ModelState.IsValid)
+        {
+            await Fill(vm);
+            return View(vm);
+        }
+
+        if (!await _workflowStatus.ValidateSequentialTransitionAsync("MeetingStatus", null, vm.StatusLookupId, ModelState, nameof(vm.StatusLookupId), "الاجتماع"))
         {
             await Fill(vm);
             return View(vm);
@@ -157,6 +165,18 @@ public class MeetingsController : Controller
             return View(vm);
         }
 
+        var existing = await _db.Meetings.AsNoTracking().FirstOrDefaultAsync(x => x.Id == vm.Id.Value);
+        if (existing == null)
+        {
+            return NotFound();
+        }
+
+        if (!await _workflowStatus.ValidateSequentialTransitionAsync("MeetingStatus", existing.StatusLookupId, vm.StatusLookupId, ModelState, nameof(vm.StatusLookupId), "الاجتماع"))
+        {
+            await Fill(vm);
+            return View(vm);
+        }
+
         var entity = await _db.Meetings.FirstOrDefaultAsync(x => x.Id == vm.Id.Value);
         if (entity == null)
         {
@@ -185,8 +205,10 @@ public class MeetingsController : Controller
         vm.Cases = await BuildCasesAsync(vm.CaseTypeId);
         vm.Users = await _db.Users.AsNoTracking().OrderBy(x => x.FullName)
             .Select(x => new SelectListItem(x.FullName, x.Id)).ToListAsync();
-        vm.Statuses = await _db.Lookups.Where(x => x.Type == "MeetingStatus" && x.IsActive).OrderBy(x => x.NameAr)
-            .Select(x => new SelectListItem(x.NameAr, x.Id.ToString())).ToListAsync();
+        var currentStatusId = vm.Id.HasValue
+            ? await _db.Meetings.AsNoTracking().Where(x => x.Id == vm.Id.Value).Select(x => (int?)x.StatusLookupId).FirstOrDefaultAsync()
+            : null;
+        vm.Statuses = await _workflowStatus.GetSequentialOptionsAsync("MeetingStatus", currentStatusId);
     }
 
     private async Task<List<SelectListItem>> BuildCasesAsync(int? caseTypeId)

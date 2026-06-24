@@ -18,60 +18,26 @@ public class TasksController : Controller
     private readonly IPermissionService _permissions;
     private readonly ICaseTimelineService _timeline;
     private readonly ICaseTypeOptionsService _caseTypeOptions;
+    private readonly IWorkflowStatusService _workflowStatus;
 
-    public TasksController(AppDbContext db, IPermissionService permissions, ICaseTimelineService timeline, ICaseTypeOptionsService caseTypeOptions)
+    public TasksController(AppDbContext db, IPermissionService permissions, ICaseTimelineService timeline, ICaseTypeOptionsService caseTypeOptions, IWorkflowStatusService workflowStatus)
     {
         _db = db;
         _permissions = permissions;
         _timeline = timeline;
         _caseTypeOptions = caseTypeOptions;
+        _workflowStatus = workflowStatus;
     }
 
     public async Task<IActionResult> Index(int? statusId, int? priorityId, string? assigneeId, int? caseId, DateTime? dueDate)
     {
-        var canViewAll = await CanViewAllAsync();
-        var canViewMine = await _permissions.HasPermissionAsync(User, "Tasks.ViewMine");
-        if (!canViewAll && !canViewMine)
-        {
-            return Forbid();
-        }
-
-        var query = VisibleTasksQuery(canViewAll, CurrentUserId());
-        if (statusId.HasValue) query = query.Where(x => x.StatusLookupId == statusId);
-        if (priorityId.HasValue) query = query.Where(x => x.PriorityLookupId == priorityId);
-        if (!string.IsNullOrWhiteSpace(assigneeId)) query = query.Where(x => x.AssignedToUserId == assigneeId);
-        if (caseId.HasValue) query = query.Where(x => x.RelatedCaseId == caseId);
-        if (dueDate.HasValue) query = query.Where(x => x.DueDate.Date == dueDate.Value.Date);
-
-        ViewBag.StatusId = statusId;
-        ViewBag.PriorityId = priorityId;
-        ViewBag.AssigneeId = assigneeId;
-        ViewBag.CaseId = caseId;
-        ViewBag.DueDate = dueDate?.ToString("yyyy-MM-dd");
-        await FillFilters();
-
-        var items = await query
-            .OrderBy(x => x.IsDeleted)
-            .ThenBy(x => x.DueDate)
-            .Select(x => new LegalTaskListItemVM
-            {
-                Id = x.Id,
-                Title = x.Title,
-                RelatedCaseNumber = x.RelatedCase != null ? x.RelatedCase.CaseNumber : null,
-                AssignedToUserName = x.AssignedToUser.FullName,
-                StatusName = x.StatusLookup.NameAr,
-                PriorityName = x.PriorityLookup.NameAr,
-                TaskTypeName = x.TaskTypeLookup.NameAr,
-                DueDate = x.DueDate,
-                IsDeleted = x.IsDeleted,
-                CompletedAt = x.CompletedAt
-            })
-            .ToListAsync();
-
-        return View(items);
+        return await RenderListAsync(statusId, priorityId, assigneeId, caseId, dueDate);
     }
 
-    public Task<IActionResult> Mine() => Index(null, null, CurrentUserId(), null, null);
+    public async Task<IActionResult> Mine()
+    {
+        return await RenderListAsync(null, null, CurrentUserId(), null, null);
+    }
 
     public async Task<IActionResult> Today()
     {
@@ -82,7 +48,7 @@ public class TasksController : Controller
             return Forbid();
         }
 
-        return await Index(null, null, CurrentUserId(), null, DateTime.Today);
+        return await RenderListAsync(null, null, CurrentUserId(), null, DateTime.Today);
     }
 
     public async Task<IActionResult> Late()
@@ -128,7 +94,8 @@ public class TasksController : Controller
         var vm = new LegalTaskEditVM
         {
             RelatedCaseId = caseId,
-            DueDate = DateTime.Today
+            DueDate = DateTime.Today,
+            StatusLookupId = await _workflowStatus.GetInitialStatusIdAsync("TaskStatus") ?? 0
         };
         await Fill(vm);
         return View(vm);
@@ -144,6 +111,12 @@ public class TasksController : Controller
         }
 
         if (!ModelState.IsValid)
+        {
+            await Fill(vm);
+            return View(vm);
+        }
+
+        if (!await _workflowStatus.ValidateSequentialTransitionAsync("TaskStatus", null, vm.StatusLookupId, ModelState, nameof(vm.StatusLookupId), "المهمة"))
         {
             await Fill(vm);
             return View(vm);
@@ -231,6 +204,18 @@ public class TasksController : Controller
         }
 
         if (!await ValidateCaseTypeMatchAsync(vm.RelatedCaseId, vm.CaseTypeId))
+        {
+            await Fill(vm);
+            return View(vm);
+        }
+
+        var existing = await _db.LegalTasks.AsNoTracking().FirstOrDefaultAsync(x => x.Id == vm.Id.Value && !x.IsDeleted);
+        if (existing == null)
+        {
+            return NotFound();
+        }
+
+        if (!await _workflowStatus.ValidateSequentialTransitionAsync("TaskStatus", existing.StatusLookupId, vm.StatusLookupId, ModelState, nameof(vm.StatusLookupId), "المهمة"))
         {
             await Fill(vm);
             return View(vm);
@@ -368,12 +353,59 @@ public class TasksController : Controller
     private async Task Fill(LegalTaskEditVM vm)
     {
         await FillFilters();
-        vm.Statuses = (IEnumerable<SelectListItem>)ViewBag.Statuses;
+        var currentStatusId = vm.Id.HasValue
+            ? await _db.LegalTasks.AsNoTracking().Where(x => x.Id == vm.Id.Value && !x.IsDeleted).Select(x => (int?)x.StatusLookupId).FirstOrDefaultAsync()
+            : null;
+        vm.Statuses = await _workflowStatus.GetSequentialOptionsAsync("TaskStatus", currentStatusId);
         vm.Priorities = (IEnumerable<SelectListItem>)ViewBag.Priorities;
         vm.Types = (IEnumerable<SelectListItem>)ViewBag.Types;
         vm.Assignees = (IEnumerable<SelectListItem>)ViewBag.Users;
         vm.CaseTypes = await SelectLookups("CaseType");
         vm.Cases = await BuildCasesAsync(vm.CaseTypeId);
+    }
+
+    private async Task<IActionResult> RenderListAsync(int? statusId, int? priorityId, string? assigneeId, int? caseId, DateTime? dueDate)
+    {
+        var canViewAll = await CanViewAllAsync();
+        var canViewMine = await _permissions.HasPermissionAsync(User, "Tasks.ViewMine");
+        if (!canViewAll && !canViewMine)
+        {
+            return Forbid();
+        }
+
+        var query = VisibleTasksQuery(canViewAll, CurrentUserId());
+        if (statusId.HasValue) query = query.Where(x => x.StatusLookupId == statusId);
+        if (priorityId.HasValue) query = query.Where(x => x.PriorityLookupId == priorityId);
+        if (!string.IsNullOrWhiteSpace(assigneeId)) query = query.Where(x => x.AssignedToUserId == assigneeId);
+        if (caseId.HasValue) query = query.Where(x => x.RelatedCaseId == caseId);
+        if (dueDate.HasValue) query = query.Where(x => x.DueDate.Date == dueDate.Value.Date);
+
+        ViewBag.StatusId = statusId;
+        ViewBag.PriorityId = priorityId;
+        ViewBag.AssigneeId = assigneeId;
+        ViewBag.CaseId = caseId;
+        ViewBag.DueDate = dueDate?.ToString("yyyy-MM-dd");
+        await FillFilters();
+
+        var items = await query
+            .OrderBy(x => x.IsDeleted)
+            .ThenBy(x => x.DueDate)
+            .Select(x => new LegalTaskListItemVM
+            {
+                Id = x.Id,
+                Title = x.Title,
+                RelatedCaseNumber = x.RelatedCase != null ? x.RelatedCase.CaseNumber : null,
+                AssignedToUserName = x.AssignedToUser.FullName,
+                StatusName = x.StatusLookup.NameAr,
+                PriorityName = x.PriorityLookup.NameAr,
+                TaskTypeName = x.TaskTypeLookup.NameAr,
+                DueDate = x.DueDate,
+                IsDeleted = x.IsDeleted,
+                CompletedAt = x.CompletedAt
+            })
+            .ToListAsync();
+
+        return View("Index", items);
     }
 
     private string? CurrentUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier);

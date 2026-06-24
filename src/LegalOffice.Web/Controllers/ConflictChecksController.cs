@@ -15,12 +15,14 @@ public class ConflictChecksController : Controller
     private readonly AppDbContext _db;
     private readonly IPermissionService _permissions;
     private readonly ICaseTypeOptionsService _caseTypeOptions;
+    private readonly IWorkflowStatusService _workflowStatus;
 
-    public ConflictChecksController(AppDbContext db, IPermissionService permissions, ICaseTypeOptionsService caseTypeOptions)
+    public ConflictChecksController(AppDbContext db, IPermissionService permissions, ICaseTypeOptionsService caseTypeOptions, IWorkflowStatusService workflowStatus)
     {
         _db = db;
         _permissions = permissions;
         _caseTypeOptions = caseTypeOptions;
+        _workflowStatus = workflowStatus;
     }
 
     public async Task<IActionResult> Index(string? search)
@@ -58,7 +60,8 @@ public class ConflictChecksController : Controller
 
         var vm = new ConflictCheckVM
         {
-            CaseId = caseId
+            CaseId = caseId,
+            ResultStatusLookupId = await _workflowStatus.GetInitialStatusIdAsync("ConflictCheckStatus") ?? 0
         };
         await Fill(vm);
         return View(vm);
@@ -74,6 +77,13 @@ public class ConflictChecksController : Controller
         }
 
         if (!ModelState.IsValid)
+        {
+            await Fill(vm);
+            return View(vm);
+        }
+
+        var initialStatusId = await _workflowStatus.GetInitialStatusIdAsync("ConflictCheckStatus") ?? 0;
+        if (!await _workflowStatus.ValidateSequentialTransitionAsync("ConflictCheckStatus", null, vm.ResultStatusLookupId > 0 ? vm.ResultStatusLookupId : initialStatusId, ModelState, nameof(vm.ResultStatusLookupId), "فحص التعارض"))
         {
             await Fill(vm);
             return View(vm);
@@ -109,11 +119,10 @@ public class ConflictChecksController : Controller
         vm.CaseTypes = await _caseTypeOptions.GetVisibleCaseTypesAsync(User);
         vm.Cases = await BuildCasesAsync(vm.CaseTypeId);
 
-        vm.Results = await _db.Lookups
-            .Where(x => x.Type == "ConflictCheckStatus" && x.IsActive)
-            .OrderBy(x => x.NameAr)
-            .Select(x => new SelectListItem(x.NameAr, x.Id.ToString()))
-            .ToListAsync();
+        var currentStatusId = vm.Id.HasValue
+            ? await _db.ConflictChecks.AsNoTracking().Where(x => x.Id == vm.Id.Value).Select(x => (int?)x.ResultStatusLookupId).FirstOrDefaultAsync()
+            : null;
+        vm.Results = await _workflowStatus.GetSequentialOptionsAsync("ConflictCheckStatus", currentStatusId);
     }
 
     private async Task<List<SelectListItem>> BuildCasesAsync(int? caseTypeId)

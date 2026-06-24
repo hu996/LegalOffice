@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
 using System.Security.Claims;
 
 namespace LegalOffice.Web.Controllers;
@@ -260,6 +261,32 @@ public class UsersController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(string id)
+    {
+        if (!await _permissions.HasPermissionAsync(User, "Users.Edit"))
+        {
+            return Forbid();
+        }
+
+        var user = await _db.Users.FirstOrDefaultAsync(x => x.Id == id);
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        var tempPassword = GenerateTemporaryPassword();
+
+        user.MustChangePassword = true;
+        user.PasswordHash = _userManager.PasswordHasher.HashPassword(user, tempPassword);
+        await _userManager.UpdateAsync(user);
+        await _userManager.UpdateSecurityStampAsync(user);
+
+        TempData["ToastSuccess"] = $"تمت إعادة تعيين كلمة المرور بنجاح. كلمة المرور المؤقتة: {tempPassword} — يجب تغييرها عند أول دخول.";
+        return RedirectToAction(nameof(Index));
+    }
+
     private void NormalizeVm(UserCreateEditVM vm)
     {
         vm.Email = vm.Email?.Trim() ?? string.Empty;
@@ -372,5 +399,11 @@ public class UsersController : Controller
         {
             ModelState.AddModelError(string.Empty, error.Description);
         }
+    }
+
+    private static string GenerateTemporaryPassword()
+    {
+        var value = RandomNumberGenerator.GetInt32(100000, 1000000);
+        return value.ToString();
     }
 }

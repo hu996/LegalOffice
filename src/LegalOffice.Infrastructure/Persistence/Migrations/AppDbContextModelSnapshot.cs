@@ -51,6 +51,9 @@ namespace LegalOffice.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("MustChangePassword")
+                        .HasColumnType("bit");
+
                     b.Property<int?>("LawyerId")
                         .HasColumnType("int");
 
