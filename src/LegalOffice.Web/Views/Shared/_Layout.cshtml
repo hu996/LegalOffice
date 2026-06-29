@@ -45,6 +45,16 @@
                     : (friendlyFieldNames.TryGetValue(e.Field, out var display) ? display : e.Field);
                 return $"{label}: {e.Message}";
             }).ToList();
+        var validationFieldErrors = validationErrors == null
+            ? new List<Dictionary<string, string>>()
+            : validationErrors
+                .Where(e => !string.IsNullOrWhiteSpace(e.Field))
+                .Select(e => new Dictionary<string, string>
+                {
+                    ["field"] = e.Field,
+                    ["message"] = e.Message
+                })
+                .ToList();
     }
     <div class="law-app-shell">
         <aside class="law-sidebar">
@@ -130,12 +140,73 @@
             const successMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(toastSuccess));
             const errorMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(toastError));
             const validationMessages = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(validationMessages));
+            const validationFieldErrors = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(validationFieldErrors));
             const hasValidationMessages = @((validationMessages.Count > 0).ToString().ToLowerInvariant());
 
             const modalEl = document.getElementById('appPopupModal');
             const modalTitleEl = document.getElementById('appPopupModalTitle');
             const modalBodyEl = document.getElementById('appPopupModalBody');
             if (!modalEl || !modalTitleEl || !modalBodyEl) return;
+
+            const errorByField = new Map();
+            for (const item of validationFieldErrors || []) {
+                if (!item || !item.field) continue;
+                const key = String(item.field);
+                if (!errorByField.has(key)) {
+                    errorByField.set(key, []);
+                }
+                errorByField.get(key).push(String(item.message || ''));
+            }
+
+            function ensureFieldSpan(form, fieldName, control) {
+                if (!form || !fieldName || !control) return null;
+
+                const existing = Array.from(form.querySelectorAll('[data-valmsg-for]'))
+                    .find(span => span.getAttribute('data-valmsg-for') === fieldName);
+                if (existing) {
+                    return existing;
+                }
+
+                const span = document.createElement('span');
+                span.className = 'text-danger small d-block mt-1 field-validation-valid';
+                span.setAttribute('data-valmsg-for', fieldName);
+                span.setAttribute('data-valmsg-replace', 'true');
+
+                const formCheck = control.closest('.form-check');
+                if (formCheck) {
+                    formCheck.appendChild(span);
+                } else {
+                    control.insertAdjacentElement('afterend', span);
+                }
+
+                return span;
+            }
+
+            function populateInlineValidation() {
+                const forms = document.querySelectorAll('form:not([method="get"])');
+                forms.forEach(form => {
+                    const controls = form.querySelectorAll('input[name], select[name], textarea[name]');
+                    controls.forEach(control => {
+                        const type = (control.getAttribute('type') || '').toLowerCase();
+                        if (type === 'hidden' || type === 'submit' || type === 'button' || type === 'reset' || type === 'file') {
+                            return;
+                        }
+
+                        const fieldName = control.getAttribute('name');
+                        const span = ensureFieldSpan(form, fieldName, control);
+                        const messages = errorByField.get(fieldName);
+                        if (span && messages && messages.length) {
+                            span.textContent = messages[0];
+                        }
+                    });
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', populateInlineValidation);
+            } else {
+                populateInlineValidation();
+            }
 
             let title = '';
             let bodyHtml = '';

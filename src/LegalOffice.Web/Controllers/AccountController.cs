@@ -27,7 +27,8 @@ public class AccountController : Controller
         var user = await _userManager.FindByEmailAsync(email) ?? await _userManager.FindByNameAsync(email);
         if (user != null && user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow)
         {
-            ViewBag.Error = "الحساب غير نشط حاليًا";
+            ModelState.AddModelError(nameof(email), "الحساب غير نشط حاليًا");
+            ModelState.AddModelError(nameof(password), "الحساب غير نشط حاليًا");
             return View();
         }
 
@@ -45,7 +46,8 @@ public class AccountController : Controller
             }
         }
 
-        ViewBag.Error = "بيانات الدخول غير صحيحة";
+        ModelState.AddModelError(nameof(email), "بيانات الدخول غير صحيحة");
+        ModelState.AddModelError(nameof(password), "بيانات الدخول غير صحيحة");
         return View();
     }
 
@@ -117,7 +119,14 @@ public class AccountController : Controller
         {
             foreach (var error in result.Errors)
             {
-                ModelState.AddModelError(string.Empty, error.Description);
+                if (string.Equals(error.Code, "PasswordMismatch", StringComparison.OrdinalIgnoreCase))
+                {
+                    ModelState.AddModelError(nameof(vm.CurrentPassword), error.Description);
+                }
+                else
+                {
+                    ModelState.AddModelError(nameof(vm.NewPassword), error.Description);
+                }
             }
 
             return View(vm);

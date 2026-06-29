@@ -277,10 +277,35 @@ public class UsersController : Controller
         }
 
         var tempPassword = GenerateTemporaryPassword();
+        if (await _userManager.HasPasswordAsync(user))
+        {
+            var removeResult = await _userManager.RemovePasswordAsync(user);
+            if (!removeResult.Succeeded)
+            {
+                AddIdentityErrors(removeResult);
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        var addResult = await _userManager.AddPasswordAsync(user, tempPassword);
+        if (!addResult.Succeeded)
+        {
+            AddIdentityErrors(addResult);
+            return RedirectToAction(nameof(Index));
+        }
 
         user.MustChangePassword = true;
-        user.PasswordHash = _userManager.PasswordHasher.HashPassword(user, tempPassword);
-        await _userManager.UpdateAsync(user);
+        user.LockoutEnabled = true;
+        user.LockoutEnd = null;
+        user.AccessFailedCount = 0;
+
+        var updateResult = await _userManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+        {
+            AddIdentityErrors(updateResult);
+            return RedirectToAction(nameof(Index));
+        }
+
         await _userManager.UpdateSecurityStampAsync(user);
 
         TempData["ToastSuccess"] = $"تمت إعادة تعيين كلمة المرور بنجاح. كلمة المرور المؤقتة: {tempPassword} — يجب تغييرها عند أول دخول.";
