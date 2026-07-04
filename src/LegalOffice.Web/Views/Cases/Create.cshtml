@@ -118,8 +118,8 @@
             countInputId: 'lawyersCount',
             caseTypeSelectId: 'caseTypeId',
             containerId: 'assignmentContainer',
-            lawyers: [],
-            accessLevels: @Html.Raw(JsonSerializer.Serialize(Model.AccessLevels.Select(x => new { value = x.Value, text = x.Text }))),
+            lawyers: @Html.Raw(ViewBag.LawyersJson ?? "[]"),
+            accessLevels: @Html.Raw(ViewBag.AccessLevelsJson ?? "[]"),
             initialRows: [],
             eligibleLawyersUrl: '@Url.Action("EligibleLawyers", "Cases")',
             lawyerSelectPlaceholder: 'اختر المحامي'

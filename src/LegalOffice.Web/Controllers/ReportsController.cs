@@ -87,7 +87,441 @@ public class ReportsController : Controller
         return View(vm);
     }
 
+    public async Task<IActionResult> CaseReport(int id)
+    {
+        if (!await EnsureAccessAsync("Cases.View")) return Forbid();
+
+        var vm = await BuildCaseReportAsync(id);
+        if (vm == null)
+        {
+            return NotFound();
+        }
+
+        return File(BuildCaseReportPdf(vm), "application/pdf", MakeSafeFileName($"LegalOffice-Case-{vm.CaseNumber}.pdf"));
+    }
+
+    public async Task<IActionResult> ConsultationReport(int id)
+    {
+        if (!await EnsureAccessAsync("Consultations.View")) return Forbid();
+
+        var vm = await BuildConsultationReportAsync(id);
+        if (vm == null)
+        {
+            return NotFound();
+        }
+
+        return File(BuildConsultationReportPdf(vm), "application/pdf", MakeSafeFileName($"LegalOffice-Consultation-{vm.ConsultationNumber}.pdf"));
+    }
+
     private async Task<bool> EnsureAccessAsync(string code) => await _permissions.HasPermissionAsync(User, code);
+
+    private async Task<CaseReportVM?> BuildCaseReportAsync(int id)
+    {
+        var query = _db.Cases
+            .AsNoTracking()
+            .Include(x => x.Client)
+            .Include(x => x.CaseType)
+            .Include(x => x.CaseStatus)
+            .Include(x => x.Court)
+            .Include(x => x.Priority)
+            .Include(x => x.CreatedByUser)
+            .Include(x => x.CaseLawyers).ThenInclude(x => x.Lawyer)
+            .Include(x => x.CaseLawyers).ThenInclude(x => x.AccessLevel)
+            .Include(x => x.Hearings).ThenInclude(x => x.HearingStatus)
+            .Include(x => x.Documents).ThenInclude(x => x.DocumentType)
+            .Include(x => x.Timelines)
+            .Include(x => x.Expenses).ThenInclude(x => x.ExpenseType)
+            .Include(x => x.Expenses).ThenInclude(x => x.StatusLookup)
+            .Include(x => x.Expenses).ThenInclude(x => x.SubmittedByUser)
+            .Include(x => x.Expenses).ThenInclude(x => x.ApprovedByUser)
+            .Include(x => x.ConflictChecks).ThenInclude(x => x.ResultStatusLookup)
+            .Include(x => x.ConflictChecks).ThenInclude(x => x.CheckedByUser)
+            .Include(x => x.Payments).ThenInclude(x => x.PaymentStatus)
+            .Include(x => x.Payments).ThenInclude(x => x.PaymentMethod)
+            .AsQueryable();
+
+        if (!await _permissions.HasPermissionAsync(User, "Cases.Edit"))
+        {
+            var lawyerId = await GetCurrentLawyerIdAsync();
+            if (!lawyerId.HasValue)
+            {
+                return null;
+            }
+
+            query = query.Where(x => x.CaseLawyers.Any(cl => cl.LawyerId == lawyerId.Value));
+        }
+
+        var entity = await query.FirstOrDefaultAsync(x => x.Id == id);
+        if (entity == null)
+        {
+            return null;
+        }
+
+        var assignmentHistory = await _db.CaseAssignmentHistories
+            .AsNoTracking()
+            .Where(x => x.CaseId == id)
+            .Include(x => x.Lawyer)
+            .Include(x => x.ChangedByUser)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync();
+
+        var stageHistory = await _db.CaseStageHistories
+            .AsNoTracking()
+            .Where(x => x.CaseId == id)
+            .Include(x => x.FromStageLookup)
+            .Include(x => x.ToStageLookup)
+            .Include(x => x.ChangedByUser)
+            .OrderByDescending(x => x.ChangedAt)
+            .ToListAsync();
+
+        var internalNotes = await _db.CaseInternalNotes
+            .AsNoTracking()
+            .Where(x => x.CaseId == id && !x.IsDeleted)
+            .Include(x => x.CreatedByUser)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync();
+
+        var messageLogs = await _db.MessageLogs
+            .AsNoTracking()
+            .Where(x => x.CaseId == id)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync();
+
+        var totalPaid = entity.Payments
+            .Where(x => string.Equals(x.PaymentStatus?.NameEn, "Received", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(x.PaymentStatus?.NameAr, "مستلم", StringComparison.OrdinalIgnoreCase))
+            .Sum(x => x.Amount);
+
+        var vm = new CaseReportVM
+        {
+            Id = entity.Id,
+            CaseNumber = entity.CaseNumber,
+            Title = entity.Title,
+            Description = entity.Description,
+            ClientName = entity.Client.FullName,
+            CaseType = entity.CaseType.NameAr,
+            CaseStatus = entity.CaseStatus.NameAr,
+            Court = entity.Court?.NameAr,
+            Circuit = entity.Circuit,
+            OpponentName = entity.OpponentName,
+            OpponentLawyer = entity.OpponentLawyer,
+            Priority = entity.Priority.NameAr,
+            CreatedBy = entity.CreatedByUser?.FullName ?? entity.CreatedByUser?.UserName,
+            StartDate = entity.StartDate,
+            ClosedDate = entity.ClosedDate,
+            CaseYear = entity.CaseYear,
+            FeesAmount = entity.FeesAmount,
+            TotalPaid = totalPaid,
+            Remaining = Math.Max(entity.FeesAmount - totalPaid, 0),
+            CreatedAt = entity.CreatedAt,
+            LastStageChangedAt = entity.LastStageChangedAt,
+            Lawyers = entity.CaseLawyers
+                .OrderByDescending(x => x.IsMainLawyer)
+                .ThenBy(x => x.Lawyer.FullName)
+                .Select(x => new CaseReportLawyerRowVM
+                {
+                    LawyerName = x.Lawyer.FullName,
+                    Role = x.IsMainLawyer ? "رئيسي" : x.RoleInCase ?? "مشارك",
+                    AccessLevel = x.AccessLevel?.NameAr ?? "-"
+                })
+                .ToList(),
+            Hearings = entity.Hearings
+                .OrderByDescending(x => x.HearingDate)
+                .Select(x => new CaseReportHearingRowVM
+                {
+                    HearingDate = x.HearingDate,
+                    HearingStatus = x.HearingStatus.NameAr,
+                    CourtDecision = x.CourtDecision,
+                    NextHearingDate = x.NextHearingDate,
+                    NextRequirements = x.NextRequirements,
+                    Notes = x.Notes
+                })
+                .ToList(),
+            Payments = entity.Payments
+                .OrderByDescending(x => x.PaymentDate)
+                .Select(x => new CaseReportPaymentRowVM
+                {
+                    PaymentDate = x.PaymentDate,
+                    Amount = x.Amount,
+                    Status = x.PaymentStatus.NameAr,
+                    Method = x.PaymentMethod?.NameAr,
+                    ReferenceNumber = x.ReferenceNumber,
+                    Notes = x.Notes
+                })
+                .ToList(),
+            Documents = entity.Documents
+                .OrderByDescending(x => x.UploadedAt)
+                .Select(x => new CaseReportDocumentRowVM
+                {
+                    UploadedAt = x.UploadedAt,
+                    DocumentType = x.DocumentType.NameAr,
+                    FileName = x.FileName,
+                    Notes = x.Notes
+                })
+                .ToList(),
+            Messages = messageLogs
+                .Select(x => new CaseReportMessageRowVM
+                {
+                    CreatedAt = x.CreatedAt,
+                    Channel = x.Channel,
+                    PhoneNumber = x.PhoneNumber,
+                    IsSent = x.IsSent,
+                    MessageText = x.MessageText,
+                    ProviderResponse = x.ProviderResponse
+                })
+                .ToList(),
+            Activity = BuildCaseActivityTimeline(entity, stageHistory, assignmentHistory, internalNotes, messageLogs)
+        };
+
+        return vm;
+    }
+
+    private async Task<ConsultationReportVM?> BuildConsultationReportAsync(int id)
+    {
+        var entity = await _db.LegalConsultations
+            .AsNoTracking()
+            .Include(x => x.Client)
+            .Include(x => x.AssignedLawyer)
+            .Include(x => x.ConsultationTypeLookup)
+            .Include(x => x.ConsultationStatusLookup)
+            .Include(x => x.Branch)
+            .Include(x => x.Department)
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (entity == null)
+        {
+            return null;
+        }
+
+        return new ConsultationReportVM
+        {
+            Id = entity.Id,
+            ConsultationNumber = entity.ConsultationNumber,
+            Title = entity.Title,
+            ClientName = entity.Client.FullName,
+            AssignedLawyer = entity.AssignedLawyer.FullName,
+            ConsultationType = entity.ConsultationTypeLookup.NameAr,
+            ConsultationStatus = entity.ConsultationStatusLookup.NameAr,
+            Branch = entity.Branch?.NameAr,
+            Department = entity.Department?.NameAr,
+            RequestDate = entity.RequestDate,
+            ResponseDate = entity.ResponseDate,
+            ConsultationFees = entity.ConsultationFees,
+            Subject = entity.Subject,
+            LegalOpinion = entity.LegalOpinion,
+            Notes = entity.Notes,
+            CreatedAt = entity.CreatedAt,
+            UpdatedAt = entity.UpdatedAt,
+            Activity = BuildConsultationActivityTimeline(entity)
+        };
+    }
+
+    private async Task<int?> GetCurrentLawyerIdAsync()
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return null;
+        }
+
+        return await _db.Lawyers
+            .AsNoTracking()
+            .Where(x => x.UserId == userId)
+            .Select(x => (int?)x.Id)
+            .FirstOrDefaultAsync();
+    }
+
+    private static List<CaseReportActivityVM> BuildCaseActivityTimeline(
+        LegalCase entity,
+        IReadOnlyCollection<CaseStageHistory> stageHistory,
+        IReadOnlyCollection<CaseAssignmentHistory> assignmentHistory,
+        IReadOnlyCollection<CaseInternalNote> internalNotes,
+        IReadOnlyCollection<MessageLog> messageLogs)
+    {
+        var items = new List<CaseReportActivityVM>();
+
+        items.Add(new CaseReportActivityVM
+        {
+            Date = entity.CreatedAt,
+            Category = "إنشاء",
+            Title = "تم إنشاء القضية",
+            Description = $"{entity.CaseNumber} - {entity.Title}"
+        });
+
+        if (entity.LastStageChangedAt.HasValue)
+        {
+            items.Add(new CaseReportActivityVM
+            {
+                Date = entity.LastStageChangedAt.Value,
+                Category = "تحديث مرحلي",
+                Title = "آخر تغيير في مرحلة القضية",
+                Description = entity.WorkflowStageLookup?.NameAr ?? "-"
+            });
+        }
+
+        if (entity.ClosedDate.HasValue)
+        {
+            items.Add(new CaseReportActivityVM
+            {
+                Date = entity.ClosedDate.Value,
+                Category = "إغلاق",
+                Title = "تم إغلاق القضية",
+                Description = entity.CaseStatus?.NameAr ?? "-"
+            });
+        }
+
+        items.AddRange(entity.Timelines.Select(x => new CaseReportActivityVM
+        {
+            Date = x.CreatedAt,
+            Category = "مراحل القضية",
+            Title = x.Title,
+            Description = x.Description
+        }));
+
+        items.AddRange(stageHistory.Select(x => new CaseReportActivityVM
+        {
+            Date = x.ChangedAt,
+            Category = "تغيير مرحلة",
+            Title = $"{x.FromStageLookup?.NameAr ?? "بداية"} → {x.ToStageLookup.NameAr}",
+            Description = x.Notes
+        }));
+
+        items.AddRange(assignmentHistory.Select(x => new CaseReportActivityVM
+        {
+            Date = x.CreatedAt,
+            Category = "إسناد محامٍ",
+            Title = x.ActionType,
+            Description = $"{x.Lawyer.FullName}{(string.IsNullOrWhiteSpace(x.Notes) ? string.Empty : $" - {x.Notes}")}"
+        }));
+
+        items.AddRange(entity.Hearings.Select(x => new CaseReportActivityVM
+        {
+            Date = x.HearingDate,
+            Category = "جلسة",
+            Title = x.HearingStatus.NameAr,
+            Description = $"{x.CourtDecision ?? "لا يوجد قرار مسجل"}{(x.NextHearingDate.HasValue ? $" | الجلسة القادمة: {x.NextHearingDate:yyyy/MM/dd}" : string.Empty)}"
+        }));
+
+        items.AddRange(internalNotes.Select(x => new CaseReportActivityVM
+        {
+            Date = x.CreatedAt,
+            Category = "ملاحظة داخلية",
+            Title = x.Note,
+            Description = x.CreatedByUser?.FullName
+        }));
+
+        items.AddRange(entity.Documents.Select(x => new CaseReportActivityVM
+        {
+            Date = x.UploadedAt,
+            Category = "مستند",
+            Title = x.DocumentType.NameAr,
+            Description = x.FileName
+        }));
+
+        items.AddRange(entity.Payments.Select(x => new CaseReportActivityVM
+        {
+            Date = x.PaymentDate,
+            Category = "دفعة",
+            Title = x.PaymentStatus.NameAr,
+            Description = $"{x.Amount:N2}{(string.IsNullOrWhiteSpace(x.ReferenceNumber) ? string.Empty : $" | {x.ReferenceNumber}")}"
+        }));
+
+        items.AddRange(entity.Expenses.Select(x => new CaseReportActivityVM
+        {
+            Date = x.ExpenseDate,
+            Category = "مصروف",
+            Title = x.ExpenseType?.NameAr ?? "مصروف",
+            Description = $"{x.Amount:N2}{(string.IsNullOrWhiteSpace(x.Notes) ? string.Empty : $" | {x.Notes}")}"
+        }));
+
+        items.AddRange(entity.ConflictChecks.Select(x => new CaseReportActivityVM
+        {
+            Date = x.CreatedAt,
+            Category = "فحص تعارض",
+            Title = x.ResultStatusLookup.NameAr,
+            Description = $"{x.CheckedByUser?.FullName ?? x.CheckedByUserId}{(string.IsNullOrWhiteSpace(x.Notes) ? string.Empty : $" | {x.Notes}")}"
+        }));
+
+        items.AddRange(messageLogs.Select(x => new CaseReportActivityVM
+        {
+            Date = x.CreatedAt,
+            Category = "رسالة",
+            Title = $"{x.Channel} - {(x.IsSent ? "مرسلة" : "غير مرسلة")}",
+            Description = ShortenText(x.MessageText, 220)
+        }));
+
+        return items
+            .OrderByDescending(x => x.Date)
+            .ToList();
+    }
+
+    private static List<ConsultationReportActivityVM> BuildConsultationActivityTimeline(LegalConsultation entity)
+    {
+        var items = new List<ConsultationReportActivityVM>
+        {
+            new()
+            {
+                Date = entity.CreatedAt,
+                Category = "إنشاء",
+                Title = "تم إنشاء الاستشارة",
+                Description = entity.CreatedAt.ToString("yyyy/MM/dd HH:mm")
+            },
+            new()
+            {
+                Date = entity.RequestDate,
+                Category = "طلب",
+                Title = "تاريخ الطلب",
+                Description = entity.Subject
+            }
+        };
+
+        if (entity.ResponseDate.HasValue)
+        {
+            items.Add(new ConsultationReportActivityVM
+            {
+                Date = entity.ResponseDate.Value,
+                Category = "رد",
+                Title = "تاريخ الرد",
+                Description = entity.LegalOpinion
+            });
+        }
+
+        if (entity.UpdatedAt.HasValue)
+        {
+            items.Add(new ConsultationReportActivityVM
+            {
+                Date = entity.UpdatedAt.Value,
+                Category = "تعديل",
+                Title = "آخر تعديل",
+                Description = entity.Notes
+            });
+        }
+
+        return items
+            .OrderByDescending(x => x.Date)
+            .ToList();
+    }
+
+    private static string ShortenText(string? text, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return "-";
+        }
+
+        text = text.Trim();
+        return text.Length <= maxLength ? text : text[..maxLength] + "...";
+    }
+
+    private static string MakeSafeFileName(string fileName)
+    {
+        var invalidChars = Path.GetInvalidFileNameChars();
+        var safe = new string(fileName.Select(ch => invalidChars.Contains(ch) ? '_' : ch).ToArray());
+        return string.IsNullOrWhiteSpace(safe) ? "report.pdf" : safe;
+    }
+
+    private byte[] BuildCaseReportPdf(CaseReportVM vm) => new CaseDetailPdf(vm).GeneratePdf();
+    private byte[] BuildConsultationReportPdf(ConsultationReportVM vm) => new ConsultationDetailPdf(vm).GeneratePdf();
 
     private IQueryable<LegalCase> BuildCaseQuery(ReportFiltersVM filters)
     {
@@ -657,22 +1091,7 @@ public class ReportsController : Controller
 
     private static void RenderPdfKpis(IContainer container, IReadOnlyList<(string Label, string Value)> items)
     {
-        container.Table(table =>
-        {
-            table.ColumnsDefinition(columns =>
-            {
-                columns.RelativeColumn();
-                columns.RelativeColumn();
-                columns.RelativeColumn();
-                columns.RelativeColumn();
-            });
-
-            for (var i = 0; i < items.Count; i++)
-            {
-                table.Cell().Element(CellHeader).Text(items[i].Label);
-                table.Cell().Element(CellBody).Text(items[i].Value);
-            }
-        });
+        RenderFactList(container, null, items);
     }
 
     private static void RenderPdfCountTable(IContainer container, string title, string firstColumnHeader, IReadOnlyList<ReportCountRowVM> rows)
@@ -758,6 +1177,420 @@ public class ReportsController : Controller
                 });
             }
         });
+    }
+
+    private sealed class CaseDetailPdf : IDocument
+    {
+        private readonly CaseReportVM _vm;
+        public CaseDetailPdf(CaseReportVM vm) => _vm = vm;
+
+        public DocumentMetadata GetMetadata() => DocumentMetadata.Default;
+
+        public void Compose(IDocumentContainer container)
+        {
+            container.Page(page =>
+            {
+                page.Margin(18);
+                page.ContentFromRightToLeft();
+                page.DefaultTextStyle(x => x.FontFamily("Cairo").FontSize(10));
+
+                page.Header().ShowOnce().Element(c => RenderCaseReportHeader(c, _vm));
+                page.Content().Column(col =>
+                {
+                    col.Spacing(8);
+                    col.Item().Element(c => RenderCaseQuickSummary(c, _vm));
+                    col.Item().Element(c => RenderPdfParagraphBlock(c, "وصف القضية", string.IsNullOrWhiteSpace(_vm.Description) ? "لا يوجد وصف مسجل للقضية." : _vm.Description!));
+                    if (_vm.Lawyers.Any())
+                    {
+                        col.Item().Element(c => RenderPdfLawyerSection(c, _vm.Lawyers.Take(4).ToList()));
+                    }
+                    if (_vm.Hearings.Any())
+                    {
+                        col.Item().Element(c => RenderPdfHearingSection(c, _vm.Hearings.Take(3).ToList()));
+                    }
+                    var activity = _vm.Activity.Take(6).ToList();
+                    if (activity.Any())
+                    {
+                        col.Item().Element(c => RenderPdfActivitySection(c, activity));
+                    }
+                });
+
+                page.Footer().AlignCenter().Text($"تم التوليد في {DateTime.Now:yyyy/MM/dd HH:mm}");
+            });
+        }
+    }
+
+    private sealed class ConsultationDetailPdf : IDocument
+    {
+        private readonly ConsultationReportVM _vm;
+        public ConsultationDetailPdf(ConsultationReportVM vm) => _vm = vm;
+
+        public DocumentMetadata GetMetadata() => DocumentMetadata.Default;
+
+        public void Compose(IDocumentContainer container)
+        {
+            container.Page(page =>
+            {
+                page.Margin(18);
+                page.ContentFromRightToLeft();
+                page.DefaultTextStyle(x => x.FontFamily("Cairo").FontSize(10));
+
+                page.Header().ShowOnce().Element(c => RenderConsultationReportHeader(c, _vm));
+                page.Content().Column(col =>
+                {
+                    col.Spacing(8);
+                    col.Item().Element(c => RenderConsultationQuickSummary(c, _vm));
+                    col.Item().Element(c => RenderPdfParagraphBlock(c, "الموضوع", string.IsNullOrWhiteSpace(_vm.Subject) ? "لا يوجد موضوع مسجل." : _vm.Subject!));
+                    if (!string.IsNullOrWhiteSpace(_vm.LegalOpinion))
+                    {
+                        col.Item().Element(c => RenderPdfParagraphBlock(c, "الرأي القانوني", _vm.LegalOpinion!));
+                    }
+                    if (!string.IsNullOrWhiteSpace(_vm.Notes))
+                    {
+                        col.Item().Element(c => RenderPdfParagraphBlock(c, "ملاحظات", _vm.Notes!));
+                    }
+                    var activity = _vm.Activity.Take(4).ToList();
+                    if (activity.Any())
+                    {
+                        col.Item().Element(c => RenderConsultationActivitySection(c, activity));
+                    }
+                });
+
+                page.Footer().AlignCenter().Text($"تم التوليد في {DateTime.Now:yyyy/MM/dd HH:mm}");
+            });
+        }
+    }
+
+    private static void RenderCaseReportHeader(IContainer container, CaseReportVM vm)
+    {
+        container.Column(col =>
+        {
+            col.Spacing(8);
+            col.Item().Border(1).BorderColor(Colors.Brown.Darken2).Background(Colors.Brown.Lighten5).Padding(14).Column(box =>
+            {
+                box.Spacing(6);
+                box.Item().AlignRight().Text("تقرير القضية").Bold().FontSize(20).FontColor(Colors.Brown.Darken4);
+                box.Item().AlignRight().Text(vm.Title).FontSize(12).FontColor(Colors.Grey.Darken1);
+                box.Item().Element(c => RenderFactList(c, null, new[]
+                {
+                    ("رقم القضية", vm.CaseNumber),
+                    ("الحالة الحالية", vm.CaseStatus),
+                    ("نوع القضية", vm.CaseType),
+                    ("العميل", vm.ClientName),
+                    ("تاريخ البداية", vm.StartDate.ToString("yyyy/MM/dd")),
+                    ("المحكمة", vm.Court ?? "-")
+                }));
+            });
+        });
+    }
+
+    private static void RenderConsultationReportHeader(IContainer container, ConsultationReportVM vm)
+    {
+        container.Column(col =>
+        {
+            col.Spacing(8);
+            col.Item().Border(1).BorderColor(Colors.Brown.Darken2).Background(Colors.Brown.Lighten5).Padding(14).Column(box =>
+            {
+                box.Spacing(6);
+                box.Item().AlignRight().Text("تقرير الاستشارة").Bold().FontSize(20).FontColor(Colors.Brown.Darken4);
+                box.Item().AlignRight().Text(vm.Title).FontSize(12).FontColor(Colors.Grey.Darken1);
+                box.Item().Element(c => RenderFactList(c, null, new[]
+                {
+                    ("رقم الاستشارة", vm.ConsultationNumber),
+                    ("الحالة", vm.ConsultationStatus),
+                    ("العميل", vm.ClientName),
+                    ("المستشار", vm.AssignedLawyer),
+                    ("النوع", vm.ConsultationType)
+                }));
+            });
+        });
+    }
+
+    private static void RenderPdfKeyValueSection(IContainer container, string title, IReadOnlyList<(string Label, string Value)> items)
+    {
+        RenderFactList(container, title, items);
+    }
+
+    private static void RenderCaseQuickSummary(IContainer container, CaseReportVM vm)
+    {
+        container.Column(col =>
+        {
+            col.Spacing(4);
+            col.Item().Element(c => RenderSectionTitle(c, "ملخص سريع للقضية"));
+            col.Item().Row(row =>
+            {
+                row.RelativeItem().Element(c => RenderFactList(c, null, new[]
+                {
+                    ("رقم القضية", vm.CaseNumber),
+                    ("الحالة الحالية", vm.CaseStatus),
+                    ("نوع القضية", vm.CaseType),
+                    ("العميل", vm.ClientName)
+                }));
+                row.ConstantItem(12);
+                row.RelativeItem().Element(c => RenderFactList(c, null, new[]
+                {
+                    ("المحكمة", vm.Court ?? "-"),
+                    ("الدائرة", vm.Circuit ?? "-"),
+                    ("تاريخ البداية", vm.StartDate.ToString("yyyy/MM/dd")),
+                    ("الرسوم / المدفوع", $"{vm.FeesAmount:N2} / {vm.TotalPaid:N2}")
+                }));
+            });
+        });
+    }
+
+    private static void RenderConsultationQuickSummary(IContainer container, ConsultationReportVM vm)
+    {
+        container.Column(col =>
+        {
+            col.Spacing(4);
+            col.Item().Element(c => RenderSectionTitle(c, "ملخص سريع للاستشارة"));
+            col.Item().Row(row =>
+            {
+                row.RelativeItem().Element(c => RenderFactList(c, null, new[]
+                {
+                    ("رقم الاستشارة", vm.ConsultationNumber),
+                    ("الحالة", vm.ConsultationStatus),
+                    ("النوع", vm.ConsultationType),
+                    ("العميل", vm.ClientName)
+                }));
+                row.ConstantItem(12);
+                row.RelativeItem().Element(c => RenderFactList(c, null, new[]
+                {
+                    ("المستشار", vm.AssignedLawyer),
+                    ("الفرع", vm.Branch ?? "-"),
+                    ("القسم", vm.Department ?? "-"),
+                    ("الأتعاب", vm.ConsultationFees.ToString("N2"))
+                }));
+            });
+        });
+    }
+
+    private static void RenderPdfParagraphBlock(IContainer container, string title, string text)
+    {
+        container.Column(col =>
+        {
+            col.Spacing(4);
+            col.Item().AlignRight().Text(title).Bold().FontSize(13).FontColor(Colors.Brown.Darken3);
+            col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Background(Colors.White).Padding(12).AlignRight().Text(text);
+        });
+    }
+
+    private static void RenderPdfLawyerSection(IContainer container, IReadOnlyList<CaseReportLawyerRowVM> rows)
+    {
+        container.Column(col =>
+        {
+            col.Spacing(4);
+            col.Item().Element(c => RenderSectionTitle(c, $"المحامون المرتبطون بالقضية ({rows.Count})"));
+            if (!rows.Any())
+            {
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(10).AlignRight().Text("لا يوجد محامون مرتبطون بهذه القضية.");
+                return;
+            }
+
+            foreach (var row in rows)
+            {
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Background(Colors.White).Padding(12).Column(card =>
+                {
+                    card.Spacing(4);
+                    card.Item().AlignRight().Text(row.LawyerName).Bold().FontSize(12);
+                    card.Item().AlignRight().Text($"الدور: {row.Role}").FontColor(Colors.Grey.Darken2);
+                });
+            }
+        });
+    }
+
+    private static void RenderPdfHearingSection(IContainer container, IReadOnlyList<CaseReportHearingRowVM> rows)
+    {
+        container.Column(col =>
+        {
+            col.Spacing(4);
+            col.Item().Element(c => RenderSectionTitle(c, $"الجلسات ({rows.Count})"));
+            if (!rows.Any())
+            {
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(10).AlignRight().Text("لا توجد جلسات مسجلة.");
+                return;
+            }
+
+            foreach (var row in rows)
+            {
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Background(Colors.White).Padding(12).Column(card =>
+                {
+                    card.Spacing(3);
+                    card.Item().AlignRight().Text($"{row.HearingDate:yyyy/MM/dd}").Bold().FontSize(12);
+                    card.Item().AlignRight().Text($"الحالة: {row.HearingStatus}");
+                    card.Item().AlignRight().Text($"القرار: {ShortenText(row.CourtDecision, 180)}");
+                    card.Item().AlignRight().Text($"الجلسة القادمة: {row.NextHearingDate?.ToString("yyyy/MM/dd") ?? "-"}");
+                    card.Item().AlignRight().Text($"المطلوب: {ShortenText(row.NextRequirements, 180)}");
+                    card.Item().AlignRight().Text($"ملاحظات: {ShortenText(row.Notes, 180)}");
+                });
+            }
+        });
+    }
+
+    private static void RenderPdfPaymentSection(IContainer container, IReadOnlyList<CaseReportPaymentRowVM> rows)
+    {
+        container.Column(col =>
+        {
+            col.Spacing(4);
+            col.Item().Element(c => RenderSectionTitle(c, $"المدفوعات ({rows.Count})"));
+            if (!rows.Any())
+            {
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(10).AlignRight().Text("لا توجد مدفوعات مسجلة.");
+                return;
+            }
+
+            foreach (var row in rows)
+            {
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Background(Colors.White).Padding(12).Column(card =>
+                {
+                    card.Spacing(3);
+                    card.Item().AlignRight().Text($"{row.PaymentDate:yyyy/MM/dd}").Bold().FontSize(12);
+                    card.Item().AlignRight().Text($"المبلغ: {row.Amount:N2}");
+                    card.Item().AlignRight().Text($"الحالة: {row.Status}");
+                    card.Item().AlignRight().Text($"الطريقة: {row.Method ?? "-"}");
+                    card.Item().AlignRight().Text($"المرجع: {row.ReferenceNumber ?? "-"}");
+                    card.Item().AlignRight().Text($"ملاحظات: {ShortenText(row.Notes, 140)}");
+                });
+            }
+        });
+    }
+
+    private static void RenderPdfDocumentSection(IContainer container, IReadOnlyList<CaseReportDocumentRowVM> rows)
+    {
+        container.Column(col =>
+        {
+            col.Spacing(4);
+            col.Item().Element(c => RenderSectionTitle(c, $"المستندات ({rows.Count})"));
+            if (!rows.Any())
+            {
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(10).AlignRight().Text("لا توجد مستندات مرفوعة.");
+                return;
+            }
+
+            foreach (var row in rows)
+            {
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Background(Colors.White).Padding(12).Column(card =>
+                {
+                    card.Spacing(3);
+                    card.Item().AlignRight().Text($"{row.UploadedAt:yyyy/MM/dd}").Bold().FontSize(12);
+                    card.Item().AlignRight().Text($"النوع: {row.DocumentType}");
+                    card.Item().AlignRight().Text($"الملف: {ShortenText(row.FileName, 60)}");
+                    card.Item().AlignRight().Text($"ملاحظات: {ShortenText(row.Notes, 140)}");
+                });
+            }
+        });
+    }
+
+    private static void RenderPdfActivitySection(IContainer container, IReadOnlyList<CaseReportActivityVM> rows)
+    {
+        container.Column(col =>
+        {
+            col.Spacing(4);
+            col.Item().Element(c => RenderSectionTitle(c, $"الخط الزمني ({rows.Count})"));
+            if (!rows.Any())
+            {
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(10).AlignRight().Text("لا توجد أحداث مسجلة.");
+                return;
+            }
+
+            foreach (var row in rows)
+            {
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Background(Colors.White).Padding(12).Column(card =>
+                {
+                    card.Spacing(3);
+                    card.Item().AlignRight().Text($"{row.Date:yyyy/MM/dd HH:mm}").Bold().FontSize(12);
+                    card.Item().AlignRight().Text($"النوع: {row.Category}");
+                    card.Item().AlignRight().Text($"العنوان: {row.Title}");
+                    if (!string.IsNullOrWhiteSpace(row.Description))
+                    {
+                        card.Item().AlignRight().Text($"التفاصيل: {ShortenText(row.Description, 180)}").FontColor(Colors.Grey.Darken1);
+                    }
+                });
+            }
+        });
+    }
+
+    private static void RenderConsultationActivitySection(IContainer container, IReadOnlyList<ConsultationReportActivityVM> rows)
+    {
+        container.Column(col =>
+        {
+            col.Spacing(4);
+            col.Item().Element(c => RenderSectionTitle(c, $"الخط الزمني ({rows.Count})"));
+            if (!rows.Any())
+            {
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(10).AlignRight().Text("لا توجد أحداث مسجلة.");
+                return;
+            }
+
+            foreach (var row in rows)
+            {
+                col.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Background(Colors.White).Padding(12).Column(card =>
+                {
+                    card.Spacing(3);
+                    card.Item().AlignRight().Text($"{row.Date:yyyy/MM/dd HH:mm}").Bold().FontSize(12);
+                    card.Item().AlignRight().Text($"النوع: {row.Category}");
+                    card.Item().AlignRight().Text($"العنوان: {row.Title}");
+                    if (!string.IsNullOrWhiteSpace(row.Description))
+                    {
+                        card.Item().AlignRight().Text($"التفاصيل: {ShortenText(row.Description, 180)}").FontColor(Colors.Grey.Darken1);
+                    }
+                });
+            }
+        });
+    }
+
+    private static void RenderFactList(IContainer container, string? title, IReadOnlyList<(string Label, string Value)> items)
+    {
+        container.Column(col =>
+        {
+            col.Spacing(4);
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                col.Item().AlignRight().Text(title).Bold().FontSize(13).FontColor(Colors.Brown.Darken3);
+            }
+
+            for (var i = 0; i < items.Count; i += 2)
+            {
+                var first = items[i];
+                var hasSecond = i + 1 < items.Count;
+                var second = hasSecond ? items[i + 1] : default;
+
+                col.Item().Row(row =>
+                {
+                    row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten2).Background(Colors.White).Padding(8).Column(card =>
+                    {
+                        card.Spacing(2);
+                        card.Item().AlignRight().Text(first.Label).Bold().FontColor(Colors.Grey.Darken3);
+                        card.Item().AlignRight().Text(string.IsNullOrWhiteSpace(first.Value) ? "-" : first.Value).FontSize(11);
+                    });
+
+                    if (hasSecond)
+                    {
+                        row.ConstantItem(8);
+                        row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten2).Background(Colors.White).Padding(8).Column(card =>
+                        {
+                            card.Spacing(2);
+                            card.Item().AlignRight().Text(second.Label).Bold().FontColor(Colors.Grey.Darken3);
+                            card.Item().AlignRight().Text(string.IsNullOrWhiteSpace(second.Value) ? "-" : second.Value).FontSize(11);
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    private static void RenderSectionTitle(IContainer container, string title)
+    {
+        container.Border(1)
+            .BorderColor(Colors.Brown.Darken2)
+            .Background(Colors.Brown.Lighten5)
+            .PaddingVertical(8)
+            .PaddingHorizontal(10)
+            .AlignRight()
+            .Text(title)
+            .Bold()
+            .FontSize(13)
+            .FontColor(Colors.Brown.Darken4);
     }
 
     private static IContainer CellHeader(IContainer container) =>

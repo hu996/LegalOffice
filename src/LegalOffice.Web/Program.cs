@@ -1,14 +1,18 @@
 using LegalOffice.Infrastructure;
 using LegalOffice.Infrastructure.Persistence;
+using LegalOffice.Web.Logging;
 using LegalOffice.Web.Filters;
 using LegalOffice.Web.Services;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using QuestPDF.Infrastructure;
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 QuestPDF.Settings.License = LicenseType.Community;
+
+builder.Logging.AddProvider(new DailyFileLoggerProvider(Path.Combine(builder.Environment.ContentRootPath, "Logs")));
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<IPermissionService, PermissionService>();
@@ -61,6 +65,19 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Dashboard/Error");
     app.UseHsts();
 }
+
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        startupLogger.LogError(ex, "Unhandled exception while processing {Method} {Path}", context.Request.Method, context.Request.Path);
+        throw;
+    }
+});
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

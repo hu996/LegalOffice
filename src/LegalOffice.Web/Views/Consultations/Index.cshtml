@@ -45,6 +45,7 @@
                 <td>@item.ConsultationStatusLookup?.NameAr</td>
                 <td>@item.RequestDate.ToString("yyyy-MM-dd")</td>
                 <td class="text-end">
+                    <a asp-controller="Reports" asp-action="ConsultationReport" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">PDF</a>
                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">تعديل</a>
                 </td>
             </tr>

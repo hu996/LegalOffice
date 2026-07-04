@@ -23,6 +23,7 @@
             <a class="btn btn-gold" asp-action="Edit" asp-route-id="@Model.Id">تعديل القضية</a>
             <a class="btn btn-outline-primary" asp-controller="Messages" asp-action="Send" asp-route-caseId="@Model.Id">إرسال رسالة</a>
         }
+        <a class="btn btn-outline-secondary" asp-controller="Reports" asp-action="CaseReport" asp-route-id="@Model.Id">طباعة PDF</a>
         <a class="btn btn-outline-secondary" asp-controller="Cases" asp-action="Index">رجوع</a>
     </div>
 </div>

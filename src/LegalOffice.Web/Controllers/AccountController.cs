@@ -1,5 +1,5 @@
-using LegalOffice.Domain.Entities;
 using LegalOffice.Application.ViewModels;
+using LegalOffice.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -18,23 +18,36 @@ public class AccountController : Controller
     }
 
     [AllowAnonymous]
-    public IActionResult Login() => View();
+    [HttpGet]
+    public IActionResult Login()
+    {
+        return View(new LoginVM());
+    }
+        
+  
 
     [AllowAnonymous]
     [HttpPost]
-    public async Task<IActionResult> Login(string email, string password)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Login(LoginVM vm)
     {
-        var user = await _userManager.FindByEmailAsync(email) ?? await _userManager.FindByNameAsync(email);
+        if (!ModelState.IsValid)
+        {
+            return View(vm);
+        }
+
+        var login = vm.Login.Trim();
+        var user = await _userManager.FindByEmailAsync(login) ?? await _userManager.FindByNameAsync(login);
         if (user != null && user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow)
         {
-            ModelState.AddModelError(nameof(email), "الحساب غير نشط حاليًا");
-            ModelState.AddModelError(nameof(password), "الحساب غير نشط حاليًا");
-            return View();
+            ModelState.AddModelError(nameof(vm.Login), "الحساب غير نشط حاليًا");
+            ModelState.AddModelError(nameof(vm.Password), "الحساب غير نشط حاليًا");
+            return View(vm);
         }
 
         if (user != null)
         {
-            var result = await _signIn.CheckPasswordSignInAsync(user, password, true);
+            var result = await _signIn.CheckPasswordSignInAsync(user, vm.Password, true);
             if (result.Succeeded)
             {
                 await _signIn.SignInAsync(user, isPersistent: false);
@@ -42,13 +55,14 @@ public class AccountController : Controller
                 {
                     return RedirectToAction(nameof(ChangePassword), new { forced = true });
                 }
+
                 return RedirectToAction("Index", "Dashboard");
             }
         }
 
-        ModelState.AddModelError(nameof(email), "بيانات الدخول غير صحيحة");
-        ModelState.AddModelError(nameof(password), "بيانات الدخول غير صحيحة");
-        return View();
+        ModelState.AddModelError(nameof(vm.Login), "بيانات الدخول غير صحيحة");
+        ModelState.AddModelError(nameof(vm.Password), "بيانات الدخول غير صحيحة");
+        return View(vm);
     }
 
     [HttpPost]

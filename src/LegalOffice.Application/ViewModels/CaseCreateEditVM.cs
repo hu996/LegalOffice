@@ -80,4 +80,5 @@ public class CaseCreateEditVM
     public IEnumerable<SelectListItem> Courts { get; set; } = new List<SelectListItem>();
     public IEnumerable<SelectListItem> AccessLevels { get; set; } = new List<SelectListItem>();
     public IEnumerable<SelectListItem> Priorities { get; set; } = new List<SelectListItem>();
+    public IEnumerable<SelectListItem> Lawyers { get; set; } = new List<SelectListItem>();
 }

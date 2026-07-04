@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using LegalOffice.Web.Services;
+using System.Text.Json;
 
 namespace LegalOffice.Web.Controllers;
 
@@ -580,6 +581,12 @@ public class CasesController : Controller
             .Select(x => new SelectListItem(x.FullName, x.Id.ToString()))
             .ToListAsync();
 
+        vm.Lawyers = await _db.Lawyers
+            .Where(x => x.IsActive)
+            .OrderBy(x => x.FullName)
+            .Select(x => new SelectListItem(x.FullName, x.Id.ToString()))
+            .ToListAsync();
+
         vm.CaseTypes = await SelectLookups("CaseType");
         vm.Courts = await SelectLookups("Court");
         vm.AccessLevels = await SelectLookups("CaseAccessLevel");
@@ -593,6 +600,9 @@ public class CasesController : Controller
             var initialStatusId = await _workflowStatus.GetInitialStatusIdAsync("CaseStatus");
             vm.CaseStatuses = await _workflowStatus.GetSequentialOptionsAsync("CaseStatus", initialStatusId);
         }
+
+        ViewBag.LawyersJson = JsonSerializer.Serialize(vm.Lawyers.Select(x => new { value = x.Value, text = x.Text }));
+        ViewBag.AccessLevelsJson = JsonSerializer.Serialize(vm.AccessLevels.Select(x => new { value = x.Value, text = x.Text }));
     }
 
     private async Task<List<SelectListItem>> SelectLookups(string type)

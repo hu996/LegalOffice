@@ -1,3 +1,4 @@
+﻿@model LegalOffice.Application.ViewModels.LoginVM
 @{
     Layout = null;
 }
@@ -38,22 +39,29 @@
                         <div class="text-muted">أدخل بياناتك للوصول إلى النظام</div>
                     </div>
 
-                    <form method="post" class="d-grid gap-3">
+                    <form asp-action="Login" method="post" class="d-grid gap-3" novalidate>
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+
                         <div>
-                            <label class="form-label">البريد الإلكتروني أو اسم المستخدم</label>
-                            <input name="email" class="form-control" placeholder="admin@legal.local" value="admin@legal.local" />
-                            <span class="text-danger small" data-valmsg-for="email" data-valmsg-replace="true"></span>
+                            <label asp-for="Login" class="form-label"></label>
+                            <input asp-for="Login" class="form-control" placeholder="admin@legal.local" autocomplete="username" />
+                            <span asp-validation-for="Login" class="text-danger small"></span>
                         </div>
+
                         <div>
-                            <label class="form-label">كلمة المرور</label>
-                            <input name="password" type="password" class="form-control" placeholder="123456" value="123456" />
-                            <span class="text-danger small" data-valmsg-for="password" data-valmsg-replace="true"></span>
+                            <label asp-for="Password" class="form-label"></label>
+                            <input asp-for="Password" type="password" class="form-control" placeholder="••••••••" autocomplete="current-password" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
                         </div>
-                        <button class="btn btn-gold w-100">دخول</button>
+
+                        <button type="submit" class="btn btn-gold w-100">دخول</button>
                     </form>
                 </div>
             </section>
         </div>
     </div>
+
+    <partial name="_ValidationScriptsPartial" />
 </body>
 </html>

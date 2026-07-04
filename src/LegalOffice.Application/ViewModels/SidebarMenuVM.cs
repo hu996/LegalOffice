@@ -112,3 +112,117 @@ public class ReportCaseRowVM
     public decimal TotalPaid { get; set; }
     public decimal Remaining => Math.Max(FeesAmount - TotalPaid, 0);
 }
+
+public class CaseReportLawyerRowVM
+{
+    public string LawyerName { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public string AccessLevel { get; set; } = string.Empty;
+}
+
+public class CaseReportHearingRowVM
+{
+    public DateTime HearingDate { get; set; }
+    public string HearingStatus { get; set; } = string.Empty;
+    public string? CourtDecision { get; set; }
+    public DateTime? NextHearingDate { get; set; }
+    public string? NextRequirements { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class CaseReportPaymentRowVM
+{
+    public DateTime PaymentDate { get; set; }
+    public decimal Amount { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string? Method { get; set; }
+    public string? ReferenceNumber { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class CaseReportDocumentRowVM
+{
+    public DateTime UploadedAt { get; set; }
+    public string DocumentType { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
+    public string? Notes { get; set; }
+}
+
+public class CaseReportMessageRowVM
+{
+    public DateTime CreatedAt { get; set; }
+    public string Channel { get; set; } = string.Empty;
+    public string PhoneNumber { get; set; } = string.Empty;
+    public bool IsSent { get; set; }
+    public string MessageText { get; set; } = string.Empty;
+    public string? ProviderResponse { get; set; }
+}
+
+public class CaseReportActivityVM
+{
+    public DateTime Date { get; set; }
+    public string Category { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+}
+
+public class CaseReportVM
+{
+    public int Id { get; set; }
+    public string CaseNumber { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string ClientName { get; set; } = string.Empty;
+    public string CaseType { get; set; } = string.Empty;
+    public string CaseStatus { get; set; } = string.Empty;
+    public string? Court { get; set; }
+    public string? Circuit { get; set; }
+    public string? OpponentName { get; set; }
+    public string? OpponentLawyer { get; set; }
+    public string Priority { get; set; } = string.Empty;
+    public string? CreatedBy { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime? ClosedDate { get; set; }
+    public int CaseYear { get; set; }
+    public decimal FeesAmount { get; set; }
+    public decimal TotalPaid { get; set; }
+    public decimal Remaining { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? LastStageChangedAt { get; set; }
+    public List<CaseReportLawyerRowVM> Lawyers { get; set; } = new();
+    public List<CaseReportHearingRowVM> Hearings { get; set; } = new();
+    public List<CaseReportPaymentRowVM> Payments { get; set; } = new();
+    public List<CaseReportDocumentRowVM> Documents { get; set; } = new();
+    public List<CaseReportMessageRowVM> Messages { get; set; } = new();
+    public List<CaseReportActivityVM> Activity { get; set; } = new();
+}
+
+public class ConsultationReportActivityVM
+{
+    public DateTime Date { get; set; }
+    public string Category { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; }
+}
+
+public class ConsultationReportVM
+{
+    public int Id { get; set; }
+    public string ConsultationNumber { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string ClientName { get; set; } = string.Empty;
+    public string AssignedLawyer { get; set; } = string.Empty;
+    public string ConsultationType { get; set; } = string.Empty;
+    public string ConsultationStatus { get; set; } = string.Empty;
+    public string? Branch { get; set; }
+    public string? Department { get; set; }
+    public DateTime RequestDate { get; set; }
+    public DateTime? ResponseDate { get; set; }
+    public decimal ConsultationFees { get; set; }
+    public string? Subject { get; set; }
+    public string? LegalOpinion { get; set; }
+    public string? Notes { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public List<ConsultationReportActivityVM> Activity { get; set; } = new();
+}

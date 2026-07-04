@@ -2,6 +2,18 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LegalOffice.Application.ViewModels;
 
+public class LoginVM
+{
+    [Required(ErrorMessage = "البريد الإلكتروني أو اسم المستخدم مطلوب.")]
+    [Display(Name = "البريد الإلكتروني أو اسم المستخدم")]
+    public string Login { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "كلمة المرور مطلوبة.")]
+    [DataType(DataType.Password)]
+    [Display(Name = "كلمة المرور")]
+    public string Password { get; set; } = string.Empty;
+}
+
 public class ChangePasswordVM
 {
     public bool IsForced { get; set; }
